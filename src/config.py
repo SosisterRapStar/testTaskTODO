@@ -4,9 +4,11 @@ from pydantic_settings import SettingsConfigDict, BaseSettings
 
 class BSettings(BaseSettings):
     model_config = SettingsConfigDict(
-        env_file=".env", env_file_encoding="utf-8", extra="ignore" # здесь можно менять окружение на тестовое
+        env_file="/home/vanya/new_test_task/src/.env",
+        env_file_encoding="utf-8",
+        extra="ignore",  # здесь можно менять окружение на тестовое
     )
-    
+
 
 class DBSettings(BSettings):
     db_user: str = Field(default="user", alias="DB_USER")
