@@ -22,8 +22,15 @@ class DBSettings(BSettings):
         return f"postgresql+asyncpg://{self.db_user}:{self.db_password}@{self.db_host}:{self.db_port}/{self.db_name}"
 
 
+class SecuritySettings(BSettings):
+    jwt_secret: str = Field(alias="JWT_SECRET")
+    jwt_algo: str = Field(alias="JWT_ALGO")
+    access_token_expire_minutes: int = Field(default=60, alias="ACCESS_TOKEN_EXPIRE_MINUTES")
+    refresh_token_expire_minutes: int = Field(default=60, alias="REFRESH_TOKEN_EXPIRE_MINUTES")
+
 class Settings(BaseModel):
     db: DBSettings = DBSettings()
+    security: SecuritySettings = SecuritySettings()
 
 
 settings = Settings()
