@@ -12,6 +12,8 @@ fastapi = "^0.114.2"
 pydantic = "^2.9.1"
 pydantic-settings = "^2.5.2"
 ruff = "^0.6.5"
+asyncpg = "^0.29.0"
+alembic = "^1.13.2"
 
 
 [tool.poetry.group.dev.dependencies]

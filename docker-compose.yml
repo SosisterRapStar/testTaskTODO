@@ -1,0 +1,18 @@
+services:
+  db:
+    image: postgres:16.2-alpine3.19
+    restart: always
+    container_name: test_db
+    volumes:
+      - .test_db_data/data/postgres:/var/lib/postgresql/data
+    env_file:
+      - .env_for_test_db
+    ports:
+      - '5432:5432'
+    networks:
+      - my_network
+      
+
+networks:
+  my_network:
+    driver: bridge

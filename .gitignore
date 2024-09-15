@@ -1,2 +1,3 @@
 venv
 src/.env
+.env_for_test_db
