@@ -9,6 +9,12 @@ class User(Base):
     __tablename__ = "user"
     name: Mapped[str] = mapped_column(String(20), nullable=False)
     password: Mapped[str | None]
+    notes: Mapped[List["Note"] | None] = relationship(
+        back_populates="in_conversation",
+        uselist=True,
+        cascade="all, delete",
+        passive_deletes=True,
+    )
     created_at: Mapped[created_at_timestamp]
     updated_at: Mapped[updated_at_timestamp]
 
@@ -19,6 +25,10 @@ class Note(Base):
     tags: Mapped[List["Tag"] | None] = relationship(
         back_populates="notes", secondary="note_tag"
     )
+    user_fk: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("user.id", ondelete="Cascade")
+    )
+    user: Mapped[User] = relationship(back_populates="notes")
 
 
 class Tag(Base):

@@ -4,6 +4,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from typing import Type, List, ClassVar
 from src.domain.orm import Base
 
+
 @dataclass
 class AbstractRepo(ABC):
     session: AsyncSession
@@ -20,22 +21,22 @@ class AbstractRepo(ABC):
     @abstractmethod
     async def update(self):
         raise NotImplementedError
-    
+
     @abstractmethod
     async def get(self):
         raise NotImplementedError
-    
+
     @abstractmethod
     async def get_list(self):
         raise NotImplementedError
 
+
 @dataclass
 class AbstractNotesRepo(AbstractRepo):
-    
     @abstractmethod
     async def get_by_tags(self):
         raise NotImplementedError
-    
+
 
 @dataclass
 class AbstractUserRepo(AbstractRepo):

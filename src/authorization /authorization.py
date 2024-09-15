@@ -28,15 +28,13 @@ class Authorzation:
     }
     __REFRESH_EXPIRE_TIME = timedelta()
 
-    async def __create_token(
-        self, user_data: dict[str, Any], type: str
-    ) -> str:
+    async def __create_token(self, user_data: dict[str, Any], type: str) -> str:
         payload = user_data.copy()
         expire_in = datetime.now() + self.token_settings[type]["expire_time"]
         payload["iat"] = datetime.now()
         payload["exp"] = expire_in
         payload["sub"] = type
-        
+
         token = jwt.encode(
             payload,
             settings.security.jwt_secret,
