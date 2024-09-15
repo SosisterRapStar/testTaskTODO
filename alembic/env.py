@@ -9,6 +9,7 @@ from src.config import settings
 from alembic import context
 from src.domain.entities import *  # noqa: F403
 from src.domain.orm import Base
+
 # this is the Alembic Config object, which provides
 # access to the values within the .ini file in use.
 config = context.config
@@ -30,6 +31,7 @@ target_metadata = Base.metadata
 # ... etc.
 
 config.set_main_option("sqlalchemy.url", settings.db.db_string_url)
+
 
 def run_migrations_offline() -> None:
     """Run migrations in 'offline' mode.

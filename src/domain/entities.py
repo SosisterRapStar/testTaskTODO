@@ -8,7 +8,7 @@ import uuid
 class User(Base):
     __tablename__ = "user"
     name: Mapped[str] = mapped_column(String(20), nullable=False)
-    password: Mapped[str | None] 
+    password: Mapped[str | None]
     created_at: Mapped[created_at_timestamp]
     updated_at: Mapped[updated_at_timestamp]
 
