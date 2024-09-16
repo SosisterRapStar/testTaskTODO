@@ -98,8 +98,6 @@ class NotesRepo(AbstractNotesRepo):
                         self.session.add(tag)
                     note.tags.append(tag)
 
-            
-
         for key, value in updates.items():
             setattr(note, key, value)
         return note
@@ -134,6 +132,10 @@ class AbstractUserRepo(AbstractAlchemyRepo):
 
     @abstractmethod
     async def get(self, id: str) -> User:
+        raise NotImplementedError
+
+    @abstractmethod
+    async def get_by_name(self, name: str) -> User:
         raise NotImplementedError
 
     @abstractmethod
@@ -172,3 +174,7 @@ class UserRepo(AbstractUserRepo):
         if not await self.session.scalar(statement=stmt):
             return False
         return True
+
+    async def get_by_name(self, name: str) -> User:
+        stm = select(User).where(User.name == name)
+        return await self.session.scalar_one(stm)

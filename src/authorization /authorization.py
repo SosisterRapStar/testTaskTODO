@@ -8,7 +8,11 @@ from passlib.context import CryptContext
 from .exceptions import PasswordVerificationError
 from adapters.repository import AbstractUserRepo
 from dataclasses import dataclass
-from src.domain.schemas import BaseUserModel
+from src.domain.schemas import UserOnAuth
+from src.domain.entities import User
+from sqlalchemy.orm import NoResultFound
+from .schemas import TokenResponse
+
 
 @dataclass
 class Authorzation:
@@ -26,17 +30,50 @@ class Authorzation:
             ),
         },
     }
-    
+
     user_repo: AbstractUserRepo
-    user_data: BaseUserModel
+    user_data: UserOnAuth
 
     async def get_token(self):
         try:
-            user = await user.get(name=data.username)
-            verify_password(data.password, user.password)
+            user_from_db = await self.user_repo.get_by_name(name=self.user_data.name)
+            await self.check_passwords(self.user_data.password, user_from_db.password)
 
-        except (PasswordVerificationError, RecordNotFoundError):
-            raise UserCredentialsError()
+        except PasswordVerificationError:
+            raise PasswordVerificationError
+
+        except NoResultFound:
+            raise HTTPException(
+                status_code=400, detail="There is no user with this nickname"
+            )
+
+        return await self.__get_user_tokens(user_from_db)
+
+    async def update_access_token(self, refresh_token):
+        data = self.__get_token_payload(refresh_token)
+        if data["sub"] != "refresh_token":
+            raise HTTPException(status_code=401, detail="Invalid token")
+        user_id = data["id"]
+
+        try:
+            user = await self.repo.get(id=user_id)
+        except (LookupError, NoResultFound):
+            raise HTTPException(status_code=401, detail="Invalid token")
+
+        return await self.__get_user_tokens(user=user, refresh_token=refresh_token)
+
+    async def __get_user_tokens(self, user: User, refresh_token=None):
+        data = {"name": user.name, "id": user.id}
+        access_token = self.__create_token(user_data=data, type="access_token")
+
+        if not refresh_token:
+            refresh_token = self.__create_token(user_data=data, type="refresh_token")
+
+        return TokenResponse(
+            access_token=access_token,
+            refresh_token=refresh_token,
+            expires_in=self.token_settings["access_token"]["expire_time"].seconds,
+        )
 
     async def __create_token(self, user_data: dict[str, Any], type: str) -> str:
         payload = user_data.copy()
@@ -72,5 +109,6 @@ class Authorzation:
         if not self.crypt_context.verify(raw_password, hashed_password):
             raise PasswordVerificationError
 
-    async def hash_password(self, raw_password: str) -> str:
-        return self.crypt_context.hash(raw_password)
+
+async def hash_password(self, raw_password: str) -> str:
+    return self.crypt_context.hash(raw_password)
