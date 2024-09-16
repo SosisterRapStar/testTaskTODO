@@ -76,9 +76,9 @@ class NotesRepo(AbstractNotesRepo):
     async def update(self, id: str, updates: dict) -> Note | Result:
         id = uuid.UUID(id)
         new_tags = updates.pop("tags", None)
+        note = await self.session.scalar(select(Note).where(Note.id == id))
 
         if new_tags:
-            note = await self.session.scalar(select(Note).where(Note.id == id))
             await note.awaitable_attrs.tags
             old_tags = note.tags
             no_need_to_check = set()
@@ -98,14 +98,11 @@ class NotesRepo(AbstractNotesRepo):
                         self.session.add(tag)
                     note.tags.append(tag)
 
-            for key, value in updates.items():
-                setattr(note, key, value)
-            return note
+            
 
-        else:
-            stmt = update(Note).where(Note.id == id).values(updates).returning(Note)
-        res = await self.session.execute(stmt)
-        return res.scalar_one()
+        for key, value in updates.items():
+            setattr(note, key, value)
+        return note
 
     async def get_by_tags(self, user_id: str, tags: List[str]) -> Note:
         id = uuid.UUID(id)
@@ -118,7 +115,7 @@ class NotesRepo(AbstractNotesRepo):
             .having(func.count(Tag.id) == len(tags))
         )
         result = await self.session.execute(stmt)
-        return result.scalars().all()
+        return list(result.scalars().all())
 
 
 @dataclass
