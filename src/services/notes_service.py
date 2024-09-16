@@ -15,8 +15,8 @@ class NotesService:
     session: AsyncSession
 
     async def create_new_note(self, user: User, note: NoteSchema) -> Note:
-        new_note = self.repository.create(
-            title=note.title, tags=[tag.name for tag in note.tags], user_id=user.id
+        new_note = await self.repository.create(
+            title=note.title, tags=[tag.name for tag in note.tags], user_id=str(user.id)
         )
         await self.session.commit()
         return new_note

@@ -1,18 +1,21 @@
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, ConfigDict
 from typing import List
 import datetime
 import uuid
 
 
 class BaseUserModel(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
     name: str
 
 
 class Tag(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
     name: str
 
 
 class UserOnAuth(BaseUserModel):
+    model_config = ConfigDict(from_attributes=True)
     password: str
 
 

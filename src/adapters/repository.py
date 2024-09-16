@@ -54,6 +54,7 @@ class AbstractNotesRepo(AbstractAlchemyRepo):
 
 @dataclass
 class NotesRepo(AbstractNotesRepo):
+
     async def create(self, title: str, tags: List[str], user_id: str) -> Note:
         user_id = uuid.UUID(user_id)
         new_note = Note(title=title)
@@ -68,6 +69,10 @@ class NotesRepo(AbstractNotesRepo):
             new_note.tags.append(tag)
         new_note.user_fk = user_id
         return new_note
+    
+    async def get(self, note_id: str) -> Note:
+        stmt = select(Note).where(Note.id == id)
+        return await self.session.scalar(statement=stmt)
 
     async def delete(self, id: str) -> Result:
         id = uuid.UUID(id)
@@ -148,9 +153,9 @@ class AbstractUserRepo(AbstractAlchemyRepo):
 @dataclass
 class UserRepo(AbstractUserRepo):
     async def create(self, name: str, password: str) -> User:
-        User(name=name, password=password)
-        self.session.add(User)
-        return User
+        user = User(name=name, password=password)
+        self.session.add(user)
+        return user
 
     async def delete(self, id: str) -> Result:
         id = uuid.UUID(id)
@@ -179,4 +184,5 @@ class UserRepo(AbstractUserRepo):
 
     async def get_by_name(self, name: str) -> User:
         stm = select(User).where(User.name == name)
-        return await self.session.scalar_one(stm)
+        res = await self.session.execute(stm)
+        return res.scalar_one()

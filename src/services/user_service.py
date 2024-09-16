@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from sqlalchemy.ext.asyncio import AsyncSessions
+from sqlalchemy.ext.asyncio import AsyncSession
 from src.adapters.repository import AbstractUserRepo
 from src.domain.schemas import BaseUserModel
 from src.domain.entities import User, Note
@@ -7,21 +7,23 @@ from asyncpg.exceptions import UniqueViolationError
 from fastapi import HTTPException
 from typing import List
 from src.domain.schemas import UserOnAuth
-
+from sqlalchemy.exc import IntegrityError
 
 @dataclass
 class UserService:
-    session: AsyncSessions
+    session: AsyncSession
     user_repo: AbstractUserRepo
 
     async def register_user(self, user: UserOnAuth) -> User:
+        user = await self.user_repo.create(name=user.name, password=user.password)
         try:
-            user = await self.user_repo.create(user.name, user.password)
             await self.session.commit()
-        except UniqueViolationError as e:
+            return user
+        except (IntegrityError, UniqueViolationError )as e:
             raise HTTPException(
                 status_code=400, detail="User with this nickname already exists"
             )
+        
 
     async def delete_user(self, current_user: User, deleting_id: str) -> str:
         if current_user.id != deleting_id:

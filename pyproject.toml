@@ -17,6 +17,7 @@ alembic = "^1.13.2"
 jose = "^1.0.0"
 python-jose = "^3.3.0"
 passlib = "^1.7.4"
+uvicorn = "^0.30.6"
 
 
 [tool.poetry.group.dev.dependencies]

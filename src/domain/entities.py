@@ -12,7 +12,7 @@ class User(Base):
     )
     password: Mapped[str | None]
     notes: Mapped[List["Note"] | None] = relationship(
-        back_populates="in_conversation",
+        back_populates="user",
         uselist=True,
         cascade="all, delete",
         passive_deletes=True,

@@ -5,7 +5,7 @@ from dependencies.auth_deps import get_auth_service
 from dependencies.db_services import user_service
 from dependencies.hash_dep import user_with_hashed_password
 from src.domain.schemas import UserOnResponse, UserOnAuth
-
+from src.authorization.schemas import TokenResponse
 router = APIRouter(tags=["Auth"])
 
 
@@ -13,16 +13,18 @@ router = APIRouter(tags=["Auth"])
 async def registration(
     user_service: user_service, user_schema: user_with_hashed_password
 ):
-    return await user_service.register_user(user_schema)
+    print(user_schema.name)
+    return await user_service.register_user(user=user_schema)
+    # return {"message": "user_created"}
 
 
-@router.post("/login", status_code=status.HTTP_200_OK)
+@router.post("/login", status_code=status.HTTP_200_OK, response_model=TokenResponse)
 async def authorization(auth_service: get_auth_service, user_schema: UserOnAuth):
     auth_service.set_user_info(user=user_schema)
     return await auth_service.get_token()
 
 
-@router.post("/refresh", status_code=status.HTTP_200_OK)
+@router.post("/refresh", status_code=status.HTTP_200_OK, response_model=TokenResponse)
 async def refresh_access_token(
     refresh_token: Annotated[str | None, Header()], auth_service: get_auth_service
 ):
