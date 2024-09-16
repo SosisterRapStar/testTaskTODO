@@ -6,9 +6,9 @@ from src.config import settings
 from fastapi import HTTPException
 from passlib.context import CryptContext
 from .exceptions import PasswordVerificationError
-
+from adapters.repository import AbstractUserRepo
 from dataclasses import dataclass
-
+from src.domain.schemas import BaseUserModel
 
 @dataclass
 class Authorzation:
@@ -26,7 +26,17 @@ class Authorzation:
             ),
         },
     }
-    __REFRESH_EXPIRE_TIME = timedelta()
+    
+    user_repo: AbstractUserRepo
+    user_data: BaseUserModel
+
+    async def get_token(self):
+        try:
+            user = await user.get(name=data.username)
+            verify_password(data.password, user.password)
+
+        except (PasswordVerificationError, RecordNotFoundError):
+            raise UserCredentialsError()
 
     async def __create_token(self, user_data: dict[str, Any], type: str) -> str:
         payload = user_data.copy()
