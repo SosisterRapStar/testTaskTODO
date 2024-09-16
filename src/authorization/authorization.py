@@ -32,11 +32,14 @@ class Authorzation:
     }
 
     user_repo: AbstractUserRepo
-    user_data: UserOnAuth
+    user_data: dict | None = None
+
+    async def set_user_info(self, user: UserOnAuth):
+        self.user_data['name'] = user.password
 
     async def get_token(self):
         try:
-            user_from_db = await self.user_repo.get_by_name(name=self.user_data.name)
+            user_from_db = await self.user_repo.get_by_name(name=self.user_data['name'])
             await self.check_passwords(self.user_data.password, user_from_db.password)
 
         except PasswordVerificationError:
@@ -50,7 +53,7 @@ class Authorzation:
         return await self.__get_user_tokens(user_from_db)
 
     async def update_access_token(self, refresh_token):
-        data = self.__get_token_payload(refresh_token)
+        data = get_token_payload(refresh_token)
         if data["sub"] != "refresh_token":
             raise HTTPException(status_code=401, detail="Invalid token")
         user_id = data["id"]
@@ -89,26 +92,27 @@ class Authorzation:
         )
         return token
 
-    async def __get_token_payload(token: str) -> dict:
-        try:
-            payload = jwt.decode(
-                token,
-                settings.security.jwt_secret,
-                algorithms=settings.security.jwt_algo,
-            )
-            return payload
 
-        except jwt.ExpiredSignatureError:
-            raise HTTPException(status_code=401, detail="Signature has expired")
-
-        except jwt.InvalidTokenError as e:
-            raise HTTPException(status_code=401, detail="Invalid token")
 
     # хэшированный пароль должен поступать из базы данных
     async def check_passwords(self, raw_password: str, hashed_password: str) -> None:
         if not self.crypt_context.verify(raw_password, hashed_password):
             raise PasswordVerificationError
 
+async def get_token_payload(token: str) -> dict:
+    try:
+        payload = jwt.decode(
+            token,
+            settings.security.jwt_secret,
+            algorithms=settings.security.jwt_algo,
+        )
+        return payload
+
+    except jwt.ExpiredSignatureError:
+        raise HTTPException(status_code=401, detail="Signature has expired")
+
+    except jwt.InvalidTokenError as e:
+        raise HTTPException(status_code=401, detail="Invalid token")
 
 async def hash_password(self, raw_password: str) -> str:
     return self.crypt_context.hash(raw_password)
