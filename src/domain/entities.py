@@ -21,7 +21,7 @@ class User(Base):
 
 class Note(Base):
     __tablename__ = "note"
-    title: Mapped[str] = mapped_column(String(20), nullable=False)
+    title: Mapped[str] = mapped_column(String(20), nullable=False, unique=True, index=True)
     tags: Mapped[List["Tag"] | None] = relationship(
         back_populates="notes", secondary="note_tag"
     )
@@ -36,7 +36,7 @@ class Tag(Base):
 
     id: Mapped[int] = mapped_column(autoincrement=True, primary_key=True)
     name: Mapped[str] = mapped_column(String(30))
-    notes: Mapped[List["Note"] | None] = relationship(
+    notes: Mapped[List["Note"]] = relationship(
         back_populates="tags", secondary="note_tag"
     )
 
