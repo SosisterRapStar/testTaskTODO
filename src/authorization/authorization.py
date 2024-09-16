@@ -34,7 +34,7 @@ class Authorzation:
     user_repo: AbstractUserRepo
     user_data: dict | None = None
 
-    async def set_user_info(self, user: UserOnAuth):
+    def set_user_info(self, user: UserOnAuth):
         self.user_data["name"] = user.password
 
     async def get_token(self):

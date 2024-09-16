@@ -6,6 +6,7 @@ from src.domain.entities import User, Note
 from asyncpg.exceptions import UniqueViolationError
 from fastapi import HTTPException
 from typing import List
+from src.domain.schemas import UserOnAuth
 
 
 @dataclass
@@ -13,7 +14,7 @@ class UserService:
     session: AsyncSessions
     user_repo: AbstractUserRepo
 
-    async def create_user(self, user: BaseUserModel) -> User:
+    async def register_user(self, user: UserOnAuth) -> User:
         try:
             user = await self.user_repo.create(user.name, user.password)
             await self.session.commit()
