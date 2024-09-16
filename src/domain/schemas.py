@@ -6,8 +6,10 @@ import datetime
 class BaseUserModel(BaseModel):
     name: str
 
+
 class Tag(BaseModel):
     name: str
+
 
 class NoteSchema(BaseModel):
     title: str

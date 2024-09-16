@@ -21,7 +21,9 @@ class User(Base):
 
 class Note(Base):
     __tablename__ = "note"
-    title: Mapped[str] = mapped_column(String(20), nullable=False, unique=True, index=True)
+    title: Mapped[str] = mapped_column(
+        String(20), nullable=False, unique=True, index=True
+    )
     tags: Mapped[List["Tag"] | None] = relationship(
         back_populates="notes", secondary="note_tag"
     )
