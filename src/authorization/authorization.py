@@ -35,11 +35,11 @@ class Authorzation:
     user_data: dict | None = None
 
     async def set_user_info(self, user: UserOnAuth):
-        self.user_data['name'] = user.password
+        self.user_data["name"] = user.password
 
     async def get_token(self):
         try:
-            user_from_db = await self.user_repo.get_by_name(name=self.user_data['name'])
+            user_from_db = await self.user_repo.get_by_name(name=self.user_data["name"])
             await self.check_passwords(self.user_data.password, user_from_db.password)
 
         except PasswordVerificationError:
@@ -92,12 +92,11 @@ class Authorzation:
         )
         return token
 
-
-
     # хэшированный пароль должен поступать из базы данных
     async def check_passwords(self, raw_password: str, hashed_password: str) -> None:
         if not self.crypt_context.verify(raw_password, hashed_password):
             raise PasswordVerificationError
+
 
 async def get_token_payload(token: str) -> dict:
     try:
@@ -113,6 +112,7 @@ async def get_token_payload(token: str) -> dict:
 
     except jwt.InvalidTokenError as e:
         raise HTTPException(status_code=401, detail="Invalid token")
+
 
 async def hash_password(self, raw_password: str) -> str:
     return self.crypt_context.hash(raw_password)
