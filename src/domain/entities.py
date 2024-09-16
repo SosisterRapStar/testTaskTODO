@@ -7,7 +7,9 @@ import uuid
 
 class User(Base):
     __tablename__ = "user"
-    name: Mapped[str] = mapped_column(String(20), nullable=False)
+    name: Mapped[str] = mapped_column(
+        String(20), nullable=False, unique=True, index=True
+    )
     password: Mapped[str | None]
     notes: Mapped[List["Note"] | None] = relationship(
         back_populates="in_conversation",

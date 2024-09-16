@@ -46,4 +46,4 @@ async def _get_authorization_service(session: session_dep) -> Authorzation:
 
 
 get_auth_service = Annotated[Authorzation, Depends(_get_authorization_service)]
-user_service = Annotated[User, Depends(_get_auth_user)]
+get_auth_user = Annotated[User, Depends(_get_auth_user)]

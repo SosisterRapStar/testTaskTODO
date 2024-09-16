@@ -54,7 +54,8 @@ class AbstractNotesRepo(AbstractAlchemyRepo):
 
 @dataclass
 class NotesRepo(AbstractNotesRepo):
-    async def create(self, title: str, tags: List[str]) -> Note:
+    async def create(self, title: str, tags: List[str], user_id: str) -> Note:
+        user_id = uuid.UUID(user_id)
         new_note = Note(title=title)
         self.session.add(new_note)
         await new_note.awaitable_attrs.tags
@@ -65,6 +66,7 @@ class NotesRepo(AbstractNotesRepo):
                 self.session.add(tag)
 
             new_note.tags.append(tag)
+        new_note.user_fk = user_id
         return new_note
 
     async def delete(self, id: str) -> Result:
