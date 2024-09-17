@@ -1,9 +1,7 @@
 .gitignore
 .env_for_test_db
 .gitignore
-alembic.ini
 .test_db_data
 .ruff_cache
-alembic
 docker-compose.yml
 README.md
