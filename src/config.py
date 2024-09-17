@@ -2,11 +2,11 @@ from pydantic import BaseModel, Field
 from pydantic_settings import SettingsConfigDict, BaseSettings
 import logging
 from logging.handlers import TimedRotatingFileHandler
-
+from pathlib import Path
 
 class BSettings(BaseSettings):
     model_config = SettingsConfigDict(
-        env_file="/home/vanya/new_test_task/src/.env",
+        env_file=Path(__file__).parent / ".env",
         env_file_encoding="utf-8",
         extra="ignore",  # здесь можно менять окружение на тестовое
     )
@@ -43,12 +43,16 @@ class Settings(BaseModel):
 settings = Settings()
 
 
+
+# Подключение логера
 logger = logging.getLogger("app_logger")
 logger.setLevel(logging.DEBUG)
-handler = TimedRotatingFileHandler(
-    "app.log", when="midnight", interval=1, backupCount=7
-)
-handler.suffix = "%Y-%m-%d"
-formatter = logging.Formatter("%(asctime)s - %(levelname)s - %(message)s")
+# midnight параметр отвечает за обновление соответсвенно в полночь
+handler = TimedRotatingFileHandler("app.log", when="midnight", interval=1, backupCount=7)
+handler.suffix = "%Y-%m-%d" 
+formatter = logging.Formatter('%(asctime)s - %(levelname)s - %(message)s')
 handler.setFormatter(formatter)
 logger.addHandler(handler)
+
+#отключение INFO и DEBUG логов sqlalchemy
+logging.getLogger('sqlalchemy.engine').setLevel(logging.WARNING)

@@ -8,7 +8,7 @@ from fastapi import HTTPException
 from typing import List
 from src.domain.schemas import UserOnAuth
 from sqlalchemy.exc import IntegrityError
-
+from src.config import logger
 
 @dataclass
 class UserService:

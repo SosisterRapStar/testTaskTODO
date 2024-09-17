@@ -11,6 +11,25 @@ services:
       - '5433:5432'
     networks:
       - my_network
+  
+  app:
+    build: 
+      context: .
+    env_file:
+      - ./src/.env
+    container_name: app
+    expose:
+      - "8000"
+    ports:
+      - '8000:8000'
+    depends_on:
+      - db  
+
+    volumes:
+      - ./src:/app/src
+      - ./alembic:/app/alembic
+    networks:
+      - my_network
       
 
 networks:
