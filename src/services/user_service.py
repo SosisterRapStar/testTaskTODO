@@ -10,6 +10,7 @@ from src.domain.schemas import UserOnAuth
 from sqlalchemy.exc import IntegrityError
 from src.config import logger
 
+
 @dataclass
 class UserService:
     session: AsyncSession

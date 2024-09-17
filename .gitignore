@@ -4,3 +4,4 @@ src/.env
 __pycache__/
 .ruff_cache
 .test_db_data  
+src/.env_for_docker

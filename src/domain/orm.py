@@ -55,7 +55,7 @@ def create_url_for_db():
 
 class DatabaseHandler:
     session_factory: AsyncSession = async_sessionmaker(
-        bind=create_async_engine(url=create_url_for_db(), echo=True),
+        bind=create_async_engine(url=create_url_for_db(), echo=False),
         autoflush=False,
         autocommit=False,
         expire_on_commit=False,

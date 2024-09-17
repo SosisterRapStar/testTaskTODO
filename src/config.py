@@ -4,6 +4,7 @@ import logging
 from logging.handlers import TimedRotatingFileHandler
 from pathlib import Path
 
+
 class BSettings(BaseSettings):
     model_config = SettingsConfigDict(
         env_file=Path(__file__).parent / ".env",
@@ -43,16 +44,17 @@ class Settings(BaseModel):
 settings = Settings()
 
 
-
 # Подключение логера
 logger = logging.getLogger("app_logger")
 logger.setLevel(logging.DEBUG)
 # midnight параметр отвечает за обновление соответсвенно в полночь
-handler = TimedRotatingFileHandler("app.log", when="midnight", interval=1, backupCount=7)
-handler.suffix = "%Y-%m-%d" 
-formatter = logging.Formatter('%(asctime)s - %(levelname)s - %(message)s')
+handler = TimedRotatingFileHandler(
+    "app.log", when="midnight", interval=1, backupCount=7
+)
+handler.suffix = "%Y-%m-%d"
+formatter = logging.Formatter("%(asctime)s - %(levelname)s - %(message)s")
 handler.setFormatter(formatter)
 logger.addHandler(handler)
 
-#отключение INFO и DEBUG логов sqlalchemy
-logging.getLogger('sqlalchemy.engine').setLevel(logging.WARNING)
+# отключение INFO и DEBUG логов sqlalchemy
+logging.getLogger("sqlalchemy.engine").setLevel(logging.WARNING)

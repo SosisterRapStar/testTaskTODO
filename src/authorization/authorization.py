@@ -123,7 +123,7 @@ async def get_token_payload(token: str) -> dict:
         return payload
 
     except jwt.JWTError as e:
-        logger.warning("User has provided wrong JWT it can be attack")
+        logger.warning("User has provided wrong encoded JWT it can be attack")
         raise HTTPException(status_code=401, detail="Invalid token")
 
 

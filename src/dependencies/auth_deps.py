@@ -27,6 +27,11 @@ async def _get_auth_user(request: Request, session: session_dep) -> User:
 async def _get_user_id(scope) -> str:
     headers = Headers(scope=scope)
     payload = await get_token_payload(await _token_in_headers(headers=headers))
+    if payload["sub"] != "access_token":
+        logger.warning(
+            "It seems that user try to log in with WRONG JWT it can be an attack"
+        )
+        raise HTTPException(status_code=401, detail="Invalid token")
     user_id = payload["id"]
     return user_id
 

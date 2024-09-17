@@ -1,0 +1,11 @@
+2024-09-17 20:54:41,382 - DEBUG - New jwt token created
+2024-09-17 20:54:59,523 - WARNING - User has provided wrong JWT it can be attack
+2024-09-17 20:55:13,779 - DEBUG - User has been authorized my32na32me
+2024-09-17 20:55:19,111 - DEBUG - User has been authorized my32na32me
+2024-09-17 20:56:31,420 - DEBUG - User has been authorized my32na32me
+2024-09-17 20:56:59,127 - DEBUG - User has been authorized my32na32me
+2024-09-17 20:56:59,146 - DEBUG - Note created <built-in function id>
+2024-09-17 21:06:09,586 - WARNING - It seems that user try to log in with WRONG JWT it can be an attack
+2024-09-17 21:06:31,014 - DEBUG - User has been authorized my32na32me
+2024-09-17 21:06:31,035 - DEBUG - Note created <built-in function id>
+2024-09-17 21:07:34,186 - WARNING - User has provided wrong JWT it can be attack

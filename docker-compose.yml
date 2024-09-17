@@ -16,7 +16,7 @@ services:
     build: 
       context: .
     env_file:
-      - ./src/.env
+      - ./src/.env_for_docker
     container_name: app
     expose:
       - "8000"
@@ -28,6 +28,7 @@ services:
     volumes:
       - ./src:/app/src
       - ./alembic:/app/alembic
+      - ./docker_log.log:/app/app.log
     networks:
       - my_network
       
