@@ -24,6 +24,7 @@ class UserOnResponse(BaseUserModel):
 
 
 class NoteSchema(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
     title: str
     tags: List[Tag]
 

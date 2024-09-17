@@ -32,12 +32,12 @@ async def _token_in_headers(headers) -> str:
     try:
         auth_header = headers["Authorization"]
     except LookupError:
-        raise HTTPException(status_code=401, details="Non authorized user")
+        raise HTTPException(status_code=401, detail="Non authorized user")
     try:
         token_type, token = auth_header.split()
         assert token_type == "Bearer"
     except Exception as e:  # если токен не bearer то выдаем исключение
-        raise HTTPException(status_code=401, details="Invalid token")
+        raise HTTPException(status_code=401, detail="Invalid token")
     return token
 
 

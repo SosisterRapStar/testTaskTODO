@@ -3,7 +3,8 @@ from .orm import Base, created_at_timestamp, updated_at_timestamp
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from sqlalchemy import ForeignKey, UniqueConstraint, String
 import uuid
-
+from sqlalchemy import event
+from sqlalchemy.ext.asyncio import AsyncSession
 
 class User(Base):
     __tablename__ = "user"
@@ -24,10 +25,10 @@ class User(Base):
 class Note(Base):
     __tablename__ = "note"
     title: Mapped[str] = mapped_column(
-        String(20), nullable=False, unique=True, index=True
+        String(20), nullable=False
     )
     tags: Mapped[List["Tag"] | None] = relationship(
-        back_populates="notes", secondary="note_tag"
+        back_populates="notes", secondary="note_tag", lazy = 'joined'
     )
     user_fk: Mapped[uuid.UUID] = mapped_column(
         ForeignKey("user.id", ondelete="Cascade")
@@ -61,3 +62,6 @@ class NoteTagSecondary(Base):
     )
 
     tag_id: Mapped[int] = mapped_column(ForeignKey("tag.id", ondelete="CASCADE"))
+
+
+

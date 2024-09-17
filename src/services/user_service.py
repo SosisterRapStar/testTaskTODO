@@ -32,10 +32,7 @@ class UserService:
         await self.session.commit
         return result.scalar_one()
 
-    async def get_users_notes(self, user: User) -> List[Note]:
-        await user.awaitable_attrs.notes
-        return user.notes
-
+    
     async def update_user(self, user: BaseUserModel, user_id: str) -> User:
         updates = user.model_dump(exclude_defaults=True)
         result = await self.user_repo.update(user_id=user_id, updates=updates)

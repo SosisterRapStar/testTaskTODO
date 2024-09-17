@@ -6,6 +6,8 @@ from src.domain.entities import Note, User, Tag, NoteTagSecondary
 from sqlalchemy import Result, select, delete, update, func
 from dataclasses import dataclass
 import uuid
+from sqlalchemy.exc import IntegrityError
+from src.config import logger
 
 
 @dataclass
@@ -50,7 +52,7 @@ class AbstractNotesRepo(AbstractAlchemyRepo):
     @abstractmethod
     async def get_by_tags(self, tags: List[str], user_id: str) -> Note:
         raise NotImplementedError
-
+    
 
 @dataclass
 class NotesRepo(AbstractNotesRepo):
@@ -80,48 +82,71 @@ class NotesRepo(AbstractNotesRepo):
         res = await self.session.execute(stmt)
         return res.scalar_one()
 
-    async def update(self, id: str, updates: dict) -> Note | Result:
-        id = uuid.UUID(id)
+    async def update(self, id: uuid.UUID, updates: dict) -> Note | Result:
         new_tags = updates.pop("tags", None)
         note = await self.session.scalar(select(Note).where(Note.id == id))
-
+        logger.debug(new_tags)
+        
         if new_tags:
-            await note.awaitable_attrs.tags
-            old_tags = note.tags
-            no_need_to_check = set()
-            for old_tag in new_tags:
-                if old_tag not in new_tags:
-                    note.tags.pop(old_tag)
-                else:
-                    no_need_to_check.add(old_tag)
+            
+                new_tag_names = set([tag['name'] for tag in new_tags])
+                logger.debug(f"new_tags_names {new_tag_names}")
+                # logger.debug(f"old tags {[(i.id, i.name) for i in old_tags]}")
+                no_need_to_check = set()
+                tags_to_remove = []
+                for old_tag in note.tags:
+                    logger.debug(f"old tag in sycle {old_tag.name}, {old_tag.id}")
+                    if old_tag.name not in new_tag_names:
+                        logger.debug(f" tag to remove {old_tag.name}")
+                        tags_to_remove.append(old_tag)
+                    else:
+                        no_need_to_check.add(old_tag.name)
 
-            for new_tag in new_tags:
-                if new_tag not in no_need_to_check:
-                    tag = await self.session.scalar(
-                        select(Tag).where(Tag.name == new_tag)
-                    )
-                    if not tag:
-                        tag = Tag(name=new_tag)
-                        self.session.add(tag)
-                    note.tags.append(tag)
+                for i in tags_to_remove:
+                    note.tags.remove(i)
+                
+                # logger.debug(f"tags of the notes {note.tags}")
+                # logger.debug(f"no need to check {no_need_to_check}")
+                for new_tag in new_tag_names:
+                    # logger.debug(f"new_tag in new_tag_names {new_tag}")
+                    if new_tag not in no_need_to_check:
+                        tag = await self.session.scalar(
+                            select(Tag).where(Tag.name == new_tag)
+                        )
+                        # logger.debug(f"new tag in db {tag}")
+                        if tag is None:
+                            tag = Tag(name=new_tag)
+                            self.session.add(tag)
+                        note.tags.append(tag)
+                
+                await self.__delete_tag_orphans(self.session)
 
         for key, value in updates.items():
             setattr(note, key, value)
         return note
 
-    async def get_by_tags(self, user_id: str, tags: List[str]) -> Note:
-        id = uuid.UUID(id)
-        user_id = uuid.UUID(user_id)
+    async def get_by_tags(self, user_id: uuid.UUID, tags: List[str]) -> List[Note]:
+        
         stmt = (
             select(Note)
             .join(NoteTagSecondary, Note.id == NoteTagSecondary.note_id)
-            .where(Tag.name.in_(tags) and Note.user_fk == user_id)
-            .group_by(Note.id)
-            .having(func.count(Tag.id) == len(tags))
+            .where((Tag.name.in_(tags)) & (Note.user_fk == user_id))
         )
         result = await self.session.execute(stmt)
+        result = result.unique()
         return list(result.scalars().all())
+    
+    async def __delete_tag_orphans(self, session: AsyncSession):
+        """
+        Функция, которая удаляет никем не занятые теги
+        """
 
+        await session.execute(
+            delete(Tag).where(~Tag.notes.any())
+        )
+
+        logger.debug("Orphaned tags deleted.")
+    
 
 @dataclass
 class AbstractUserRepo(AbstractAlchemyRepo):

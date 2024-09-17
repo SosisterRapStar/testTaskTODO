@@ -6,7 +6,7 @@ from sqlalchemy.ext.asyncio import (
     AsyncSession,
     AsyncAttrs,
 )
-from sqlalchemy.ext.asyncio import create_async_engine, AsyncEngine
+from sqlalchemy.ext.asyncio import create_async_engine
 from sqlalchemy.orm import Mapped, DeclarativeBase
 from src.config import settings
 from sqlalchemy import URL
@@ -27,7 +27,7 @@ updated_at_timestamp = Annotated[
     ),
 ]
 
-UUIDpk = Annotated[uuid.UUID, mapped_column(primary_key=True, default=uuid.uuid4, as_uuid=True)]
+UUIDpk = Annotated[uuid.UUID, mapped_column(primary_key=True, default=uuid.uuid4)]
 
 
 class Base(AsyncAttrs, DeclarativeBase):
