@@ -13,8 +13,6 @@ from typing import Optional
 router = APIRouter(tags=["Notes"])
 
 
-
-
 @router.post("/", status_code=status.HTTP_201_CREATED)
 async def create_note(
     current_user: get_auth_user, new_note: NoteSchema, note_service: notes_service
@@ -31,7 +29,7 @@ async def update_note(
     note_service: notes_service,
 ):
     await note_service.update_note(id=note_id, user=current_user, note_schema=note)
-    return {"message": "Note updated"}  
+    return {"message": "Note updated"}
 
 
 @router.delete("/{note_id}", status_code=status.HTTP_200_OK)
@@ -43,10 +41,15 @@ async def delete_note(
 
 
 @router.get("/", response_model=List[NoteSchemaOnResponse])
-async def get_all_users_notes(note_service: notes_service, current_user: get_auth_user, tag: Annotated[List[str] | None, Query()] = None):
+async def get_all_users_notes(
+    note_service: notes_service,
+    current_user: get_auth_user,
+    tag: Annotated[List[str] | None, Query()] = None,
+):
     if not tag:
         return await note_service.get_users_notes(user=current_user)
     return await note_service.get_notes_by_tag(user=current_user, tags=tag)
+
 
 @router.get("/{note_id}", response_model=NoteSchemaOnResponse)
 async def get_note(
@@ -57,10 +60,10 @@ async def get_note(
 
 # response_model=List[NoteSchemaOnResponse]
 # @router.get(
-#     "/", status_code=status.HTTP_200_OK) 
+#     "/", status_code=status.HTTP_200_OK)
 # async def get_notes_by_tags(
 #     current_user: get_auth_user,
 #     note_service: notes_service,
 # ):
 #     return tags
-    # 
+#

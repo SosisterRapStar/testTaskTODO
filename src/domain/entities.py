@@ -6,6 +6,7 @@ import uuid
 from sqlalchemy import event
 from sqlalchemy.ext.asyncio import AsyncSession
 
+
 class User(Base):
     __tablename__ = "user"
     name: Mapped[str] = mapped_column(
@@ -24,11 +25,9 @@ class User(Base):
 
 class Note(Base):
     __tablename__ = "note"
-    title: Mapped[str] = mapped_column(
-        String(20), nullable=False
-    )
+    title: Mapped[str] = mapped_column(String(20), nullable=False)
     tags: Mapped[List["Tag"] | None] = relationship(
-        back_populates="notes", secondary="note_tag", lazy = 'joined'
+        back_populates="notes", secondary="note_tag", lazy="joined"
     )
     user_fk: Mapped[uuid.UUID] = mapped_column(
         ForeignKey("user.id", ondelete="Cascade")
@@ -62,6 +61,3 @@ class NoteTagSecondary(Base):
     )
 
     tag_id: Mapped[int] = mapped_column(ForeignKey("tag.id", ondelete="CASCADE"))
-
-
-

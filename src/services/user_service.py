@@ -9,6 +9,7 @@ from typing import List
 from src.domain.schemas import UserOnAuth
 from sqlalchemy.exc import IntegrityError
 
+
 @dataclass
 class UserService:
     session: AsyncSession
@@ -18,12 +19,12 @@ class UserService:
         user = await self.user_repo.create(name=user.name, password=user.password)
         try:
             await self.session.commit()
+            logger.debug("Created new user {user_name}".format(user_name=user.name))
             return user
-        except (IntegrityError, UniqueViolationError )as e:
+        except (IntegrityError, UniqueViolationError) as e:
             raise HTTPException(
                 status_code=400, detail="User with this nickname already exists"
             )
-        
 
     async def delete_user(self, current_user: User, deleting_id: str) -> str:
         if current_user.id != deleting_id:
@@ -32,7 +33,6 @@ class UserService:
         await self.session.commit
         return result.scalar_one()
 
-    
     async def update_user(self, user: BaseUserModel, user_id: str) -> User:
         updates = user.model_dump(exclude_defaults=True)
         result = await self.user_repo.update(user_id=user_id, updates=updates)

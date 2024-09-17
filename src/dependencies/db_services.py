@@ -7,6 +7,7 @@ from src.services.user_service import UserService
 from src.services.notes_service import NotesService
 from src.adapters.repository import UserRepo, NotesRepo
 
+
 async def get_session() -> AsyncGenerator[AsyncSession, None]:
     session = DatabaseHandler.get_scoped_session()
     async with session() as session:
@@ -20,10 +21,12 @@ async def get_user_service(session: session_dep) -> UserService:
     return UserService(user_repo=UserRepo(session=session), session=session)
 
 
-
-
 async def get_notes_service(session: session_dep) -> NotesService:
-    return NotesService(user_repository=UserRepo(session=session), repository=NotesRepo(session=session), session=session)
+    return NotesService(
+        user_repository=UserRepo(session=session),
+        repository=NotesRepo(session=session),
+        session=session,
+    )
 
 
 user_service = Annotated[UserService, Depends(get_user_service)]

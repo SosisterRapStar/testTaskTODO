@@ -11,6 +11,8 @@ from src.domain.schemas import UserOnAuth
 from src.domain.entities import User
 from sqlalchemy.exc import NoResultFound
 from .schemas import TokenResponse
+from src.config import logger
+
 
 def get_default_settings():
     return {
@@ -26,14 +28,12 @@ def get_default_settings():
         },
     }
 
-crypt_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
+crypt_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
 
 @dataclass
 class Authorzation:
-    
-
     user_repo: AbstractUserRepo
     user_data: dict | None = None
 
@@ -47,27 +47,32 @@ class Authorzation:
     async def get_token(self):
         try:
             user_from_db = await self.user_repo.get_by_name(name=self.user_data["name"])
-            await self.check_passwords(self.user_data["password"], user_from_db.password)
+            await self.check_passwords(
+                self.user_data["password"], user_from_db.password
+            )
 
         except PasswordVerificationError:
             raise PasswordVerificationError
 
         except NoResultFound:
-            raise HTTPException(
-                status_code=400, detail="Invalid username or password"
-            )
+            raise HTTPException(status_code=400, detail="Invalid username or password")
 
+        logger.debug("New jwt token created")
         return await self.__get_user_tokens(user_from_db)
 
     async def update_access_token(self, refresh_token):
         data = await get_token_payload(refresh_token)
         if data["sub"] != "refresh_token":
+            logger.warning(
+                "User is trying to refresh token with access token it can be an attack"
+            )
             raise HTTPException(status_code=401, detail="Invalid token")
         user_id = data["id"]
 
         try:
             user = await self.user_repo.get(id=user_id)
         except (LookupError, NoResultFound):
+            logger.warning("User has provided maybe outdated JWT it can be attack")
             raise HTTPException(status_code=401, detail="Invalid token")
 
         return await self.__get_user_tokens(user=user, refresh_token=refresh_token)
@@ -77,7 +82,9 @@ class Authorzation:
         access_token = await self.__create_token(user_data=data, type="access_token")
 
         if not refresh_token:
-            refresh_token = await self.__create_token(user_data=data, type="refresh_token")
+            refresh_token = await self.__create_token(
+                user_data=data, type="refresh_token"
+            )
 
         return TokenResponse(
             access_token=access_token,
@@ -102,6 +109,7 @@ class Authorzation:
     # хэшированный пароль должен поступать из базы данных
     async def check_passwords(self, raw_password: str, hashed_password: str) -> None:
         if not crypt_context.verify(raw_password, hashed_password):
+            logger.warning("User has provided wrong password")
             raise PasswordVerificationError
 
 
@@ -115,6 +123,7 @@ async def get_token_payload(token: str) -> dict:
         return payload
 
     except jwt.JWTError as e:
+        logger.warning("User has provided wrong JWT it can be attack")
         raise HTTPException(status_code=401, detail="Invalid token")
 
 

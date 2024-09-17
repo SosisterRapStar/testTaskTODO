@@ -6,6 +6,7 @@ from dependencies.db_services import user_service
 from dependencies.hash_dep import user_with_hashed_password
 from src.domain.schemas import UserOnResponse, UserOnAuth
 from src.authorization.schemas import TokenResponse
+
 router = APIRouter(tags=["Auth"])
 
 

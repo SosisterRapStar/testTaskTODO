@@ -1,6 +1,8 @@
 from pydantic import BaseModel, Field
 from pydantic_settings import SettingsConfigDict, BaseSettings
 import logging
+from logging.handlers import TimedRotatingFileHandler
+
 
 class BSettings(BaseSettings):
     model_config = SettingsConfigDict(
@@ -41,15 +43,12 @@ class Settings(BaseModel):
 settings = Settings()
 
 
-
-logger = logging.getLogger("fastapi-logger")
+logger = logging.getLogger("app_logger")
 logger.setLevel(logging.DEBUG)
-
-console_handler = logging.StreamHandler()
-console_handler.setLevel(logging.DEBUG)
-
-formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
-
-console_handler.setFormatter(formatter)
-
-logger.addHandler(console_handler)
+handler = TimedRotatingFileHandler(
+    "app.log", when="midnight", interval=1, backupCount=7
+)
+handler.suffix = "%Y-%m-%d"
+formatter = logging.Formatter("%(asctime)s - %(levelname)s - %(message)s")
+handler.setFormatter(formatter)
+logger.addHandler(handler)

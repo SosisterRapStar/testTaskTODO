@@ -7,6 +7,7 @@ from .db_services import session_dep
 from src.authorization.authorization import get_token_payload, Authorzation
 from sqlalchemy.exc import NoResultFound
 from src.domain.entities import User
+from src.config import logger
 
 
 async def _get_auth_user(request: Request, session: session_dep) -> User:
@@ -14,11 +15,13 @@ async def _get_auth_user(request: Request, session: session_dep) -> User:
     user_repo = UserRepo(session=session)  # вынести как зависимость
     try:
         user = await user_repo.get(id=user_id)
-
+        logger.debug("User has been authorized {user_name}".format(user_name=user.name))
+        return user
     except NoResultFound:
+        logger.warning(
+            "It seems that user try to log in with very outdated JWT it can be an attack"
+        )
         raise HTTPException(status_code=401, detail="Invalid token")
-
-    return user
 
 
 async def _get_user_id(scope) -> str:
@@ -36,7 +39,8 @@ async def _token_in_headers(headers) -> str:
     try:
         token_type, token = auth_header.split()
         assert token_type == "Bearer"
-    except Exception as e:  # если токен не bearer то выдаем исключение
+    except Exception as e:
+        logger.warning("Wrong headers provided for auth type")
         raise HTTPException(status_code=401, detail="Invalid token")
     return token
 
