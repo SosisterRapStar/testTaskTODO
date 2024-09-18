@@ -20,8 +20,8 @@ services:
     container_name: app
     expose:
       - "8000"
-    ports:
-      - '8000:8000'
+    # ports: не выносим порты приложения наружу, используем nginx
+    #   - '8000:8000'
     depends_on:
       - db  
 
