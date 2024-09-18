@@ -1,17 +1,18 @@
 from dataclasses import dataclass
-from aiogram.client.session.aiohttp import AiohttpSession
 from abc import ABC, abstractmethod
+from src.backend_client import AbstractAPIClient
+
 
 @dataclass
-class AbstractAPIClient(ABC):
-    session: AiohttpSession
+class AbstractAuthService(ABC):
+    api_client: AbstractAPIClient
 
     @abstractmethod
-    async def get_users_notes():
+    async def authorize_user():
         pass
 
     @abstractmethod
-    async def authorization():
+    async def add_tag():
         pass
 
     @abstractmethod
@@ -19,11 +20,10 @@ class AbstractAPIClient(ABC):
         pass
 
     @abstractmethod
-    async def delete_note():
+    async def change_note():
         pass
 
     @abstractmethod
-    async def update_note():
+    async def find_nodes_by_tags():
         pass
 
-    
