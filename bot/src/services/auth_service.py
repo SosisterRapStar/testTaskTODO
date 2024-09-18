@@ -26,4 +26,3 @@ class AbstractAuthService(ABC):
     @abstractmethod
     async def find_nodes_by_tags():
         pass
-

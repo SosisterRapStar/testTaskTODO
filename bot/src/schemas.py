@@ -12,8 +12,10 @@ class NoteToCreate(BaseModel):
     tags: List[Tag]
     content: str
 
+
 class NoteFromBackend(NoteToCreate):
     id: uuid.UUID
+
 
 class NoteForUpdate(NoteToCreate):
     id: uuid.UUID
@@ -21,7 +23,6 @@ class NoteForUpdate(NoteToCreate):
     tags: List[Tag] | None = None
     content: str | None = None
 
-    
 
 class TokenResponse(BaseModel):
     access_token: str

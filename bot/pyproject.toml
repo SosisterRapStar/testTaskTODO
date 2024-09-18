@@ -10,6 +10,7 @@ python = "^3.10"
 aiogram = "^3.13.0"
 pydantic-settings = "^2.5.2"
 aiohttp = "^3.10.5"
+ruff = "^0.6.5"
 
 
 [build-system]
