@@ -10,5 +10,6 @@ class BSettings(BaseSettings):
 
 class Settings(BSettings):
     api_key: str = Field(alias="BOT_KEY")
+    backend_url: str = ""
 
 settings = Settings()

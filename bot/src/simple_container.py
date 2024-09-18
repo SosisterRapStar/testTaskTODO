@@ -8,3 +8,4 @@ class NaiveSimpleDIContainer:
     api_client: AbstractAPIClient
     auth_service: AbstractAuthService
     notes_service: AbstractNotesService
+

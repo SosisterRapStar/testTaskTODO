@@ -9,10 +9,9 @@ from src.bot import bot
 router = Router()
 
 
-class AuthorizationForm(StatesGroup):
-    name = State()
-    password = State()
-    delete_password = State()
+class NoteCreator(StatesGroup):
+    title = State()
+    content = State()
 
 @router.message(Command("auth"))
 async def start_registration(message: Message, state: FSMContext):
@@ -37,4 +36,5 @@ async def delete_pass(message: Message, state: FSMContext):
     await state.clear()
 
 
-
+class AddTag(StatesGroup):
+    add_teg = State()
