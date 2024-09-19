@@ -50,12 +50,17 @@ class AbstractAPIClient(ABC):
         raise NotImplementedError
 
     @abstractmethod
-    async def update_note(self, updated_note: NoteForUpdate, token: str) -> str:
+    async def update_note(
+        self, updated_note: NoteForUpdate, token: str
+    ) -> NoteFromBackend:
         raise NotImplementedError
-    
+
     @abstractmethod
-    async def get_note_using_tags(self, tags: List[str], token: str) -> List[NoteFromBackend]:
+    async def get_note_using_tags(
+        self, tags: List[str], token: str
+    ) -> List[NoteFromBackend]:
         raise NotImplementedError
+
 
 class APIClient(AbstractAPIClient):
     @asynccontextmanager
@@ -114,7 +119,9 @@ class APIClient(AbstractAPIClient):
                 raise AuthorizationError()
             return response.text()
 
-    async def update_note(self, updated_note: NoteForUpdate, token: str):
+    async def update_note(
+        self, updated_note: NoteForUpdate, token: str
+    ) -> NoteFromBackend:
         async with self._get_client() as client:
             response = await client.delete(
                 url=base_endpoint
@@ -125,18 +132,18 @@ class APIClient(AbstractAPIClient):
             )
             if response.status == 401:
                 raise AuthorizationError()
-            return response.text()
-        
-    async def get_note_using_tags(self, tags: List[Tag], token: str) -> List[NoteFromBackend]:
+            return NoteFromBackend.model_validate_json(response.json())
+
+    async def get_note_using_tags(
+        self, tags: List[Tag], token: str
+    ) -> List[NoteFromBackend]:
         async with self._get_client() as client:
             params = []
             for tag in tags:
-                params.append(('tag', tag.name))
+                params.append(("tag", tag.name))
 
             response = await client.delete(
-                url=base_endpoint
-                + api_version
-                + endpoints["notes"],
+                url=base_endpoint + api_version + endpoints["notes"],
                 params=params,
                 headers={"Authorization": f"Bearer {token}"},
             )

@@ -11,6 +11,7 @@ aiogram = "^3.13.0"
 pydantic-settings = "^2.5.2"
 aiohttp = "^3.10.5"
 ruff = "^0.6.5"
+redis = "^5.0.8"
 
 
 [build-system]

@@ -52,11 +52,9 @@ import asyncio
 from src.config import settings
 from src.keyboards.common_keyboards import get_main_key_board
 from src.handers.note_creat import router as note_creater_router
+from src.simple_container import container
 
-API_TOKEN = settings.api_key
-
-bot = Bot(token=API_TOKEN)
-dp = Dispatcher()
+dp = Dispatcher(storage=container.storage)
 
 dp.include_router(note_creater_router)
 
@@ -64,10 +62,11 @@ dp.include_router(note_creater_router)
 @dp.message(Command("start"))
 async def start_command(message: types.Message):
     await message.answer("Choose a button:", reply_markup=get_main_key_board())
+    await container.stora
 
 
 async def main():
-    await dp.start_polling(bot)
+    await dp.start_polling(container.bot)
 
 
 if __name__ == "__main__":

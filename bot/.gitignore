@@ -1,3 +1,5 @@
 /venv/
 __pycache__/
 .env
+/.redis_env
+.ruff_cache
