@@ -51,11 +51,14 @@ from aiogram.filters import Command
 import asyncio
 from src.config import settings
 from src.keyboards.common_keyboards import get_main_key_board
+from src.handers.note_creat import router as note_creater_router
 
 API_TOKEN = settings.api_key
 
 bot = Bot(token=API_TOKEN)
 dp = Dispatcher()
+
+dp.include_router(note_creater_router)
 
 
 @dp.message(Command("start"))

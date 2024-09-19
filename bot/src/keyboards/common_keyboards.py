@@ -16,3 +16,9 @@ def get_auth_key_board():
     auth_button = KeyboardButton(text="Авторизоваться")
     markup = ReplyKeyboardMarkup(resize_keyboard=True, keyboard=[[auth_button]])
     return markup
+
+
+def cancel_key():
+    auth_button = KeyboardButton(text="Отмена")
+    markup = ReplyKeyboardMarkup(resize_keyboard=True, keyboard=[[auth_button]])
+    return markup
