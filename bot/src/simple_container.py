@@ -5,9 +5,8 @@ from src.backend_client import APIClient
 from src.services.notes_service import NotesService
 from aiogram import Bot
 from src.config import settings
-from aiogram.fsm.storage.redis import RedisStorage
+from aiogram.fsm.storage.redis import RedisStorage  
 from aiogram.fsm.storage.base import StorageKey
-
 
 @dataclass
 class NaiveSimpleDIContainer:
@@ -22,5 +21,5 @@ container = NaiveSimpleDIContainer(
     notes_service=NotesService(api_client=APIClient),
     api_client=APIClient(),
     bot=Bot(token=settings.api_key),
-    storage=RedisStorage.from_url("redis://localhost:6379"),
+    storage=RedisStorage.from_url("redis://localhost:6379")
 )

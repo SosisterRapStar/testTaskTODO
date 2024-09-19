@@ -15,7 +15,6 @@ class NoteCreator(StatesGroup):
     content = State()
 
 
-# Keyboards
 def get_add_tag_keyboard():
     button = KeyboardButton(text="Добавить тег")
     button2 = KeyboardButton(text="Сохранить заметку")
@@ -32,7 +31,6 @@ def get_cancel_keyboard():
     return markup
 
 
-# Handlers
 @router.message(Command("create"))
 async def start_creating_note(message: Message, state: FSMContext):
     await state.set_state(NoteCreator.title)
