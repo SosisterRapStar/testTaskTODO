@@ -15,24 +15,24 @@ class AbstractNotesService(ABC):
     redis_client: RedisClient
 
     @abstractmethod
-    async def get_my_notes(self, token: str) -> List[NoteFromBackend]:
-        pass
+    async def get_my_notes(self, user_id: str) -> List[NoteFromBackend]:
+        raise NotImplementedError
 
     @abstractmethod
-    async def add_tag():
-        pass
+    async def create_note(self, note_data: dict) -> None:
+        raise NotImplementedError
 
     @abstractmethod
-    async def create_note(self, note_data: dict):
-        pass
+    async def change_note(self, new_data: dict, user_id: str):
+        raise NotImplementedError
 
     @abstractmethod
-    async def change_note():
-        pass
-
+    async def find_nodes_by_tags(self, user_id: str, tags: List[str]) -> List[NoteFromBackend]:
+        raise NotImplementedError
+    
     @abstractmethod
-    async def find_nodes_by_tags():
-        pass
+    async def delete_note(self, note_id: str, user_id: str) -> None:
+        raise NotImplementedError
 
 
 @dataclass
@@ -70,6 +70,7 @@ class NotesService(AbstractNotesService):
             notes_id.append(note.id)
             await self.redis_client.set_object(key=f"{user_id}:{note.id}")
         await self.redis_client.set_list(key=f"{user_id}:notes", values=notes_id)
+        return notes
 
     async def create_note(self, note_data: dict, user_id: str) -> None:
         tokens = await self.__get_user_tokens(user_id=user_id)
