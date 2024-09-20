@@ -240,8 +240,9 @@ async def cancel_process(message: Message, state: FSMContext):
 async def save_note(message: Message, state: FSMContext):
     data = await state.get_data()
     note = data["updating_note"]
-    await container.notes_service.change_note(new_data=note, user_id=message.from_user.id)
-
+    await container.notes_service.change_note(
+        new_data=note, user_id=message.from_user.id
+    )
 
 
 @router.message(NoteUpdator.choice)
