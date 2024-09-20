@@ -5,7 +5,7 @@ from aiogram.filters import Command
 from aiogram.fsm.state import StatesGroup, State
 from aiogram.types import ReplyKeyboardMarkup, KeyboardButton
 
-# from src.simple_container import container
+from src.simple_container import container
 import json
 
 router = Router()
@@ -240,9 +240,8 @@ async def cancel_process(message: Message, state: FSMContext):
 async def save_note(message: Message, state: FSMContext):
     data = await state.get_data()
     note = data["updating_note"]
-    await message.answer(
-        json.dumps(note, ensure_ascii=False), reply_markup=types.ReplyKeyboardRemove()
-    )
+    await container.notes_service.change_note(new_data=note, user_id=message.from_user.id)
+
 
 
 @router.message(NoteUpdator.choice)
