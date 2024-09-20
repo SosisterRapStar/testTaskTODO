@@ -27,11 +27,17 @@ class AbstractNotesService(ABC):
         raise NotImplementedError
 
     @abstractmethod
-    async def find_nodes_by_tags(self, user_id: str, tags: List[str]) -> List[NoteFromBackend]:
+    async def find_nodes_by_tags(
+        self, user_id: str, tags: List[str]
+    ) -> List[NoteFromBackend]:
         raise NotImplementedError
-    
+
     @abstractmethod
     async def delete_note(self, note_id: str, user_id: str) -> None:
+        raise NotImplementedError
+
+    @abstractmethod
+    async def get_note(self, note_id: str, user_id: str) -> NoteFromBackend:
         raise NotImplementedError
 
 
@@ -50,6 +56,13 @@ class NotesService(AbstractNotesService):
             return TokenResponse.model_validate_json(tokens)
         else:
             raise AuthorizationError
+
+    async def get_note(self, user_id: str, note_id: str) -> NoteFromBackend:
+        tokens = await self.__get_user_tokens(user_id=user_id)
+        if note := await self.redis_client.get_object(f"{user_id}:{note_id}"):
+            return NoteFromBackend.model_validate_json(note)
+        else:
+            return await self.api_client.get_note(note_id=note_id, user_id=user_id)
 
     async def get_my_notes(self, user_id: str) -> List[NoteFromBackend]:
         if notes := await self.redis_client.get_list(

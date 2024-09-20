@@ -13,6 +13,7 @@ from src.schemas import (
     NoteForUpdate,
 )
 from typing import AsyncGenerator, List
+from pydantic import TypeAdapter
 
 base_endpoint = settings.backend_url
 api_version = "api/v1/"
@@ -61,6 +62,10 @@ class AbstractAPIClient(ABC):
     ) -> List[NoteFromBackend]:
         raise NotImplementedError
 
+    @abstractmethod
+    async def get_note(self, note_id: str, user_id: str) -> NoteFromBackend:
+        raise NotImplementedError
+
 
 class APIClient(AbstractAPIClient):
     @asynccontextmanager
@@ -76,7 +81,9 @@ class APIClient(AbstractAPIClient):
             )
             if response.status == 401:
                 raise AuthorizationError()
-            return NoteFromBackend.model_validate_json(response.json())
+            adapter = TypeAdapter(List[NoteFromBackend])
+            list_notes = adapter.validate_json(response.json())
+            return list_notes
 
     async def authorization(self, user_data: UserData):
         async with self.__get_client() as client:
@@ -123,7 +130,7 @@ class APIClient(AbstractAPIClient):
         self, updated_note: NoteForUpdate, token: str
     ) -> NoteFromBackend:
         async with self._get_client() as client:
-            response = await client.delete(
+            response = await client.patch(
                 url=base_endpoint
                 + api_version
                 + endpoints["notes"]
@@ -149,4 +156,18 @@ class APIClient(AbstractAPIClient):
             )
             if response.status == 401:
                 raise AuthorizationError()
-            return response.text()
+            adapter = TypeAdapter(List[NoteFromBackend])
+            list_notes = adapter.validate_json(response.json())
+            return list_notes
+
+    async def get_note(self, note_id: str, token: str) -> NoteFromBackend:
+        async with self._get_client() as client:
+            response = await client.get(
+                url=base_endpoint + api_version + endpoints["notes"] + note_id,
+                headers={"Authorization": f"Bearer {token}"},
+            )
+
+            if response.status == 401:
+                raise AuthorizationError()
+
+            return NoteFromBackend.model_validate_json(response.json())
