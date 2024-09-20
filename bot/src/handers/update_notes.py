@@ -4,7 +4,8 @@ from aiogram.fsm.context import FSMContext
 from aiogram.filters import Command
 from aiogram.fsm.state import StatesGroup, State
 from aiogram.types import ReplyKeyboardMarkup, KeyboardButton
-from src.simple_container import container
+
+# from src.simple_container import container
 import json
 
 router = Router()
@@ -21,13 +22,14 @@ class NoteUpdator(StatesGroup):
 
 def get_keyboard_for_update() -> types.ReplyKeyboardMarkup:
     content_update = KeyboardButton(text="Обновить содержимое")
-    delete_tags = KeyboardButton(text="Удалить теги")
-    update_tags = KeyboardButton(text="Добавить теги")
+    delete_tags = KeyboardButton(text="Удалить тэг")
+    update_tags = KeyboardButton(text="Добавить тэг")
     rename = KeyboardButton(text="Переименовать заметку")
+    save = KeyboardButton(text="Сохранить")
     cancel = KeyboardButton(text="Отменить")
     markup = ReplyKeyboardMarkup(
         resize_keyboard=True,
-        keyboard=[[content_update, delete_tags], [update_tags, rename], [cancel]],
+        keyboard=[[content_update, delete_tags], [update_tags, rename], [cancel, save]],
     )
     return markup
 
@@ -53,15 +55,17 @@ def construct_keyboard(
     """
     Создает клавиатуру для удаления тегов
     """
-    keyboard = types.ReplyKeyboardMarkup(resize_keyboard=True)
+
+    rows = []
     row = []
     for index, item in enumerate(items):
         row.append(types.KeyboardButton(text=item))
         if (index + 1) % buttons_per_row == 0 or (index + 1) == len(items):
-            keyboard.add(*row)
+            rows.append(row)
             row = []
-    keyboard.add([KeyboardButton(text="Отменить")])
-    return keyboard
+    rows.append([KeyboardButton(text="Отменить")])
+    markup = types.ReplyKeyboardMarkup(resize_keyboard=True, keyboard=rows)
+    return markup
 
 
 @router.message(Command("test_change"))
@@ -75,11 +79,23 @@ async def start_creating_note(message: Message, state: FSMContext):
     }
     await state.update_data(updating_note=note_in_dict)
     await state.set_state(NoteUpdator.choice)
+    await message.answer(
+        "Выберите что изменить в заметке", reply_markup=get_keyboard_for_update()
+    )
 
 
 @router.message(F.text.lower() == "обновить заметку")
 async def start_creating_note(message: Message, state: FSMContext):
     await state.set_state(NoteUpdator.choice)
+    await message.answer(
+        "Выберите что изменить в заметке", reply_markup=get_keyboard_for_update()
+    )
+
+
+@router.message(NoteUpdator.choice, F.text.lower() == "сохранить")
+async def choice_state(message: Message, state: FSMContext):
+    await state.set_state(NoteUpdator.save)
+    await save_note(message, state)
 
 
 @router.message(NoteUpdator.choice, F.text.lower() == "отменить")
@@ -105,12 +121,17 @@ async def choice_state(message: Message, state: FSMContext):
 async def choice_state(message: Message, state: FSMContext):
     data = await state.get_data()
     note = data["updating_note"]
-
-    await state.set_state(NoteUpdator.delete_tags)
-    await message.answer(
-        "Выберите какой тэг удалить",
-        reply_markup=construct_keyboard(items=note["tags"]),
-    )
+    if note["tags"]:
+        await state.set_state(NoteUpdator.delete_tags)
+        await message.answer(
+            "Выберите какой тэг удалить",
+            reply_markup=construct_keyboard(items=note["tags"]),
+        )
+    else:
+        await state.set_state(NoteUpdator.choice)
+        await message.answer(
+            "У заметки нет тэгов", reply_markup=get_keyboard_for_update()
+        )
 
 
 @router.message(NoteUpdator.choice, F.text.lower() == "переименовать заметку")
@@ -123,8 +144,9 @@ async def choice_state(message: Message, state: FSMContext):
 async def change_content(message: Message, state: FSMContext):
     data = await state.get_data()
     note = data["updating_note"]
-    note["content"] = message
-    await state.set_data(NoteUpdator.choice)
+    note["content"] = message.text
+    await state.update_data(updating_note=note)
+    await state.set_state(NoteUpdator.choice)
     await message.answer(
         "Выберите что изменить в заметке", reply_markup=get_keyboard_for_update()
     )
@@ -142,8 +164,9 @@ async def cancel_content(message: Message, state: FSMContext):
 async def change_title(message: Message, state: FSMContext):
     data = await state.get_data()
     note = data["updating_note"]
-    note["title"] = message
-    await state.set_data(NoteUpdator.choice)
+    note["title"] = message.text
+    await state.update_data(updating_note=note)
+    await state.set_state(NoteUpdator.choice)
     await message.answer(
         "Выберите что изменить в заметке", reply_markup=get_keyboard_for_update()
     )
@@ -161,8 +184,9 @@ async def cancel_title(message: Message, state: FSMContext):
 async def add_tag(message: Message, state: FSMContext):
     data = await state.get_data()
     note = data["updating_note"]
-    note["tags"].append(message)
-    await state.set_data(NoteUpdator.choice)
+    note["tags"].append(message.text)
+    await state.update_data(updating_note=note)
+    await state.set_state(NoteUpdator.choice)
     await message.answer(
         "Выберите что изменить в заметке", reply_markup=get_keyboard_for_update()
     )
@@ -178,12 +202,15 @@ async def cancel_delete_tags(message: Message, state: FSMContext):
 
 @router.message(NoteUpdator.delete_tags)
 async def delete_tag_action(message: Message, state: FSMContext):
-    note = await state.get_data()
+    data = await state.get_data()
+    note = data["updating_note"]
     if message.text not in note["tags"]:
         await state.set_state(NoteUpdator.choice)
         await message.answer("Такого тэга нет", reply_markup=get_keyboard_for_update())
     else:
         note["tags"].remove(message.text)
+        await state.update_data(updating_note=note)
+        await state.set_state(NoteUpdator.choice)
         await message.answer(
             "Выберите что изменить в заметке", reply_markup=get_keyboard_for_update()
         )
@@ -197,14 +224,6 @@ async def cancel_delete_tags(message: Message, state: FSMContext):
     )
 
 
-@router.message(NoteUpdator.save)
-async def save_note(message: Message, state: FSMContext):
-    data = await state.get_data()
-    note = data["updating_note"]
-    await message.answer(json.dumps(), reply_markup=types.ReplyKeyboardRemove())
-    await state.clear()
-
-
 async def cancel_process(message: Message, state: FSMContext):
     current_state = await state.get_state()
 
@@ -215,3 +234,18 @@ async def cancel_process(message: Message, state: FSMContext):
         await message.answer(
             "Процесс отменен", reply_markup=types.ReplyKeyboardRemove()
         )
+
+
+@router.message(NoteUpdator.save)
+async def save_note(message: Message, state: FSMContext):
+    data = await state.get_data()
+    note = data["updating_note"]
+    await message.answer(
+        json.dumps(note, ensure_ascii=False), reply_markup=types.ReplyKeyboardRemove()
+    )
+
+
+@router.message(NoteUpdator.choice)
+async def choice_state(message: Message, state: FSMContext):
+    await message.answer("Изменение заметки отменено")
+    await cancel_process(message=message, state=state)

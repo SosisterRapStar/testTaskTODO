@@ -49,14 +49,16 @@ from aiogram import Bot, Dispatcher, types
 from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton
 from aiogram.filters import Command
 import asyncio
-from src.config import settings
 from src.keyboards.common_keyboards import get_main_key_board
 from src.handers.note_creat import router as note_creater_router
+from src.handers.update_notes import router as note_updator
 from src.simple_container import container
+
 
 dp = Dispatcher(storage=container.storage)
 
 dp.include_router(note_creater_router)
+dp.include_router(note_updator)
 
 
 @dp.message(Command("start"))

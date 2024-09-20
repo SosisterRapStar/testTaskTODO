@@ -22,7 +22,7 @@ class RedisManager:
 
 @dataclass
 class RedisClient:
-    redis: Redis
+    redis: Redis = RedisManager.get_connection
 
     async def set_object(self, key: str, data: dict) -> None:
         json_string = json.dumps(data)
