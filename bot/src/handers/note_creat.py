@@ -5,9 +5,10 @@ from aiogram.filters import Command
 from aiogram.fsm.state import StatesGroup, State
 from aiogram.types import ReplyKeyboardMarkup, KeyboardButton
 from src.simple_container import container
-from get_notes_handler import note_answer
+from .utils import note_answer
 from src.backend_client import AuthorizationError
 from src.keyboards.common_keyboards import get_auth_key_board
+
 router = Router()
 
 
@@ -39,8 +40,8 @@ async def start_creating_note(message: Message, state: FSMContext):
         await container.auth_service.get_user_tokens(user_id=message.from_user.id)
     except AuthorizationError:
         await message.answer("Вы не авторизованы", reply_markup=get_auth_key_board())
-        return ... 
-    
+        return ...
+
     await state.set_state(NoteCreator.title)
     await message.answer("Введите заголовок", reply_markup=get_cancel_keyboard())
 

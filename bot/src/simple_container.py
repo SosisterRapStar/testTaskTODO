@@ -20,8 +20,8 @@ class NaiveSimpleDIContainer:
 
 
 container = NaiveSimpleDIContainer(
-    notes_service=NotesService(api_client=APIClient, redis_client=RedisClient()),
-    auth_service=AuthService,
+    auth_service=AuthService(api_client=APIClient(), redis_client=RedisClient()),
+    notes_service=NotesService(api_client=APIClient(), redis_client=RedisClient(), auth_service=AuthService(api_client=APIClient(), redis_client=RedisClient())),
     api_client=APIClient(),
     bot=Bot(token=settings.api_key),
     storage=RedisStorage.from_url("redis://localhost:6379"),

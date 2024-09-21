@@ -6,10 +6,6 @@ from src.schemas import NoteToCreate, Tag, NoteFromBackend, NoteForUpdate
 from typing import List
 from src.backend_client import AuthorizationError
 from src.redis_client import RedisClient
-from pydantic import TypeAdapter
-from schemas import TokenResponse
-from contextlib import AbstractAsyncContextManager
-from typing import Coroutine, Any, _T_co
 from functools import wraps
 from src.services.auth_service import AbstractAuthService
 
@@ -57,16 +53,13 @@ class CacheIsNotConsistent(Exception):
 
 @dataclass
 class NotesService(AbstractNotesService):
-
     def __refresh_on_401(func):
         @wraps(func)  # нужно чтобы сохранить метадату функции
-        async def wrapper(self: NotesService, user_id: str, *args, **kwargs):
+        async def wrapper(self: "NotesService", user_id: str, *args, **kwargs):
             try:
                 await func(self, *args, **kwargs)  # просто вызываем функцию
             except AuthorizationError:
-                self.auth_service.refresh_tokens(
-                    user_id=user_id
-                )  # обновялем токены
+                self.auth_service.refresh_tokens(user_id=user_id)  # обновялем токены
                 await func(self, *args, **kwargs)
 
         return wrapper
@@ -110,9 +103,7 @@ class NotesService(AbstractNotesService):
         )
 
         note_id = await self.api_client.create_note(note=note, token=self.tokens.acce)
-        await self.redis_client.set_object(
-            key=f"{user_id}:{note_id}", data=note_data
-        )
+        await self.redis_client.set_object(key=f"{user_id}:{note_id}", data=note_data)
         await self.redis_client.add_to_list(key=f"{user_id}:notes", value=note.id)
 
     @__refresh_on_401
@@ -139,23 +130,23 @@ class NotesService(AbstractNotesService):
             await self.redis_client.set_list(key=f"{user_id}:notes", values=notes)
 
     @__refresh_on_401
-    async def __from_list_to_notes(self, notes_id: list[str], user_id: str) -> List[NoteFromBackend]:
+    async def __from_list_to_notes(
+        self, notes_id: list[str], user_id: str
+    ) -> List[NoteFromBackend]:
         notes = []
         for note_id in notes_id:
-            if note := await self.redis_client.get_object(
-                key=f"{user_id}:{note_id}"
-            ):
+            if note := await self.redis_client.get_object(key=f"{user_id}:{note_id}"):
                 notes.append(NoteFromBackend.model_validate_json(note))
             raise CacheIsNotConsistent
 
     @__refresh_on_401
-    async def find_nodes_by_tags(self, tags: List[str], user_id: str) -> List[NoteFromBackend]:
+    async def find_nodes_by_tags(
+        self, tags: List[str], user_id: str
+    ) -> List[NoteFromBackend]:
         try:
             finded_notes = []
             if notes_id := self.redis_client.get_list(key=f"{user_id}:notes"):
-                notes = self.__from_list_to_notes(
-                    user_id=user_id, notes_id=notes_id
-                )
+                notes = self.__from_list_to_notes(user_id=user_id, notes_id=notes_id)
             for note in notes:
                 if tags in note.tags:
                     finded_notes.append(note)
@@ -171,7 +162,5 @@ class NotesService(AbstractNotesService):
                 await self.redis_client.set_object(
                     key=f"{user_id}:{note.id}", data=note.model_dump_json()
                 )
-            await self.redis_client.set_list(
-                key=f"{user_id}:notes", values=notes_id
-            )
+            await self.redis_client.set_list(key=f"{user_id}:notes", values=notes_id)
             return notes

@@ -6,8 +6,7 @@ from aiogram.fsm.state import StatesGroup, State
 from aiogram.types import ReplyKeyboardMarkup, KeyboardButton
 
 from src.simple_container import container
-import json
-from .get_notes_handler import note_answer
+from .utils import note_answer
 
 router = Router()
 
@@ -247,7 +246,6 @@ async def save_note(message: Message, state: FSMContext):
     await message.answer("Заметка обновлена", reply_markup=types.ReplyKeyboardRemove())
     await note_answer(note=note, message=message)
     await state.clear()
-    
 
 
 @router.message(NoteUpdator.choice)
