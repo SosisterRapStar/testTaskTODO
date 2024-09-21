@@ -49,12 +49,15 @@ async def delete_note(
     await container.notes_service.delete_note(
         user_id=callback_query.message.from_user.id, note_id=callback_data.note_id
     )
+    
     await callback_query.answer(text=f"Note was deleted")
+
     await container.bot.delete_message(
         chat_id=callback_query.message.chat.id,
         message_id=callback_query.message.message_id,
     )
-    await callback_query.answer()
+
+
 
 def note_to_markdown(note: NoteToCreate) -> str:
     note = note.model_dump()

@@ -24,10 +24,10 @@ class RedisManager:
 class RedisClient:
     redis: Redis = RedisManager.get_connection
 
-    async def set_object(self, key: str, data: dict) -> None:
+    async def set_object(self, key: str, data: dict, **kwargs) -> None:
         json_string = json.dumps(data)
         async with self.redis as r:
-            await r.set(key, json_string)
+            await r.set(key, json_string, **kwargs)
 
     async def set_list(self, key: str, values: list[dict] | list[str]) -> None:
         async with self.redis as r:

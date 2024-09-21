@@ -63,7 +63,7 @@ class AbstractAPIClient(ABC):
         raise NotImplementedError
 
     @abstractmethod
-    async def get_note(self, note_id: str, user_id: str) -> NoteFromBackend:
+    async def get_note(self, note_id: str, token: str) -> NoteFromBackend:
         raise NotImplementedError
 
 
