@@ -1,0 +1,40 @@
+services:
+
+
+  app:
+    build: 
+      context: .
+    env_file:
+      - ./src/.env_for_docker
+    container_name: app
+    expose:
+      - "8000"
+    ports:
+      - '8000:8000'
+    depends_on:
+      - db  
+
+    volumes:
+      - ./src:/app/src
+      - ./alembic:/app/alembic
+      - ./docker_log.log:/app/app.log
+    networks:
+      - my_network
+
+  db:
+    image: postgres:16.2-alpine3.19
+    restart: always
+    container_name: test_db
+    volumes:
+      - .test_db_data/data/postgres:/var/lib/postgresql/data
+    env_file:
+      - .env_for_test_db
+    ports:
+      - '5433:5432'
+    networks:
+      - my_network
+      
+
+networks:
+  my_network:
+    driver: bridge
