@@ -69,22 +69,18 @@ class NotesService(AbstractNotesService, AbstractAsyncContextManager):
         @wraps(func)
         async def wrapper(self: NotesService, *args, **kwargs):
             try:
-                # Call the wrapped function
                 return await func(self, *args, **kwargs)
             except AuthorizationError:
                 try:
-                    # Try to refresh the token
                     refreshed_tokens = await self.api_client.refresh_token(refresh_token=self.tokens.refresh_token)
                     self.tokens = refreshed_tokens
                     
-                    # Update the token in the Redis cache without updating the TTL
                     await self.redis_client.set_object(
                         key=f"{self.user_id}:tokens", 
                         object=refreshed_tokens.model_dump(), 
                         xx=True
                     )
                     
-                    # Retry the original function call with the new token
                     return await func(self, *args, **kwargs)
                 except AuthorizationError as e:
                     raise e
