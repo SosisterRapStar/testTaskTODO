@@ -10,6 +10,7 @@ from pydantic import TypeAdapter
 from schemas import TokenResponse
 from contextlib import AbstractAsyncContextManager
 from typing import Coroutine, Any, _T_co
+from functools import wraps
 
 
 @dataclass
@@ -63,7 +64,8 @@ class NotesService(AbstractNotesService, AbstractAsyncContextManager):
     tokens: TokenResponse | None = None
     user_id: str | None = None
 
-    def __retry_on_401(func):
+    def __refresh_on_401(func):
+        @wraps(func)
         async def wrapper(self: NotesService, *args, **kwargs):
             try:
                 await self.func(*args, **kwargs)
@@ -75,6 +77,7 @@ class NotesService(AbstractNotesService, AbstractAsyncContextManager):
                     await self.func(*args, **kwargs)
                 except AuthorizationError as e:
                     raise e
+            return wrapper
     
     async def __aenter__(self, user_id: str):
         if tokens_from_cache := self.__get_user_tokens(self.user_id):
@@ -86,18 +89,19 @@ class NotesService(AbstractNotesService, AbstractAsyncContextManager):
     async def __aexit__(self, exc_type, exc_val, exc_tb):
         await self.cleanup_resources()
 
+    @__refresh_on_401
     async def __get_user_tokens(self, user_id: str) -> TokenResponse:
         if tokens := await self.redis_client.get_object(key=f"{user_id}:tokens"):
             return TokenResponse.model_validate_json(tokens)
         
-    @__retry_on_401
+    @__refresh_on_401
     async def get_note(self, user_id: str, note_id: str) -> NoteFromBackend:
         if note := await self.redis_client.get_object(f"{user_id}:{note_id}"):
             return NoteFromBackend.model_validate_json(note)
         else:
             return await self.api_client.get_note(note_id=note_id, token=self.tokens.access_token)
         
-    @__retry_on_401
+    @__refresh_on_401
     async def get_my_notes(self, user_id: str) -> List[NoteFromBackend]:
         if notes := await self.redis_client.get_list(
             key=f"{user_id}:notes"
@@ -118,7 +122,7 @@ class NotesService(AbstractNotesService, AbstractAsyncContextManager):
         await self.redis_client.set_list(key=f"{user_id}:notes", values=notes_id)
         return notes
     
-    @__retry_on_401
+    @__refresh_on_401
     async def create_note(self, note_data: dict, user_id: str) -> None:
 
         note = NoteToCreate(
@@ -132,7 +136,7 @@ class NotesService(AbstractNotesService, AbstractAsyncContextManager):
         await self.redis_client.add_to_list(key=f"{user_id}:notes", value=note.id)
 
 
-    @__retry_on_401
+    @__refresh_on_401
     async def change_note(self, new_data: dict, user_id: str) -> NoteFromBackend:
         note = NoteForUpdate(**new_data)
         updated_note = await self.api_client.update_note(
@@ -143,7 +147,7 @@ class NotesService(AbstractNotesService, AbstractAsyncContextManager):
         )
         return updated_note
     
-    @__retry_on_401
+    @__refresh_on_401
     async def delete_note(self, note_id: str, user_id: str) -> None:
         deleted_note_id = await self.api_client.delete_note(
             note_id=note_id, token=self.tokens.access_token
@@ -155,7 +159,7 @@ class NotesService(AbstractNotesService, AbstractAsyncContextManager):
                 notes.remove[deleted_note_id]
             await self.redis_client.set_list(key=f"{user_id}:notes", values=notes)
 
-    @__retry_on_401
+    @__refresh_on_401
     async def __from_list_to_notes(
         self, notes_id: list[str], user_id: str
     ) -> List[NoteFromBackend]:
@@ -165,7 +169,7 @@ class NotesService(AbstractNotesService, AbstractAsyncContextManager):
                 notes.append(NoteFromBackend.model_validate_json(note))
             raise CacheIsNotConsistent
         
-    @__retry_on_401
+    @__refresh_on_401
     async def find_nodes_by_tags(
         self, user_id: str, tags: List[str]
     ) -> List[NoteFromBackend]:
