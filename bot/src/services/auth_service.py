@@ -13,17 +13,21 @@ class AbstractAuthService(ABC):
     redis_client: RedisClient
 
     @abstractmethod
-    async def authorize_user():
+    async def get_user_tokens(self, user_id: str) -> TokenResponse:
         raise NotImplementedError
 
     @abstractmethod
-    async def refresh_token():
+    async def authorize_user(self, name: str, password: str, user_id: str) -> None:
+        raise NotImplementedError
+
+    @abstractmethod
+    async def refresh_tokens(self, user_id: str) -> TokenResponse:
         raise NotImplementedError
 
 
 @dataclass
 class AuthService(AbstractAuthService):
-    async def __get_user_tokens(self, user_id: str) -> TokenResponse:
+    async def get_user_tokens(self, user_id: str) -> TokenResponse:
         if tokens := await self.redis_client.get_object(key=f"{user_id}:tokens"):
             return TokenResponse.model_validate_json(tokens)
         else:
@@ -32,14 +36,18 @@ class AuthService(AbstractAuthService):
     async def authorize_user(self, name: str, password: str, user_id: str) -> None:
         user_data = UserData(name=name, password=password)
         tokens: TokenResponse = await self.api_client.authorization(user_data=user_data)
-        self.redis_client.set_object(key=f"{user_id}:tokens", data=tokens.model_dump())
+        await self.redis_client.set_object(key=f"{user_id}:tokens", data=tokens.model_dump())
 
-    async def refresh_token(self, user_id: str) -> None:
-        tokens = await self.__get_user_tokens(user_id=user_id)
-        tokens_in_dict = json.loads(tokens)
-        tokens = await self.api_client.refresh_token(
-            refresh_token=tokens_in_dict["refresh_token"]
+    async def refresh_tokens(self, user_id: str) -> TokenResponse:
+        tokens = await self.get_user_tokens(user_id=user_id)
+        refreshed_tokens = await self.api_client.refresh_token(refresh_token=tokens.refresh_token)
+        tokens = refreshed_tokens
+                    
+        await self.redis_client.set_object(
+            key=f"{self.user_id}:tokens", 
+            object=refreshed_tokens.model_dump(), 
+            xx=True
         )
-        await self.redis_client.set_list(
-            key=f"{user_id}:tokens", data=tokens.model_dump()
-        )
+        return tokens
+                    
+        

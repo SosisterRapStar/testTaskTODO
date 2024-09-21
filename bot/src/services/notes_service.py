@@ -11,12 +11,14 @@ from schemas import TokenResponse
 from contextlib import AbstractAsyncContextManager
 from typing import Coroutine, Any, _T_co
 from functools import wraps
-
+from src.services.auth_service import AbstractAuthService
 
 @dataclass
 class AbstractNotesService(ABC, AbstractAsyncContextManager):
     api_client: AbstractAPIClient
     redis_client: RedisClient
+    auth_service: AbstractAuthService 
+
     @abstractmethod
     async def __aenter__(self) -> Coroutine[Any, Any, _T_co]:
         return await super().__aenter__()
@@ -69,39 +71,21 @@ class NotesService(AbstractNotesService, AbstractAsyncContextManager):
         @wraps(func)
         async def wrapper(self: NotesService, *args, **kwargs):
             try:
-                return await func(self, *args, **kwargs)
+                await func(self, *args, **kwargs)
             except AuthorizationError:
-                try:
-                    refreshed_tokens = await self.api_client.refresh_token(refresh_token=self.tokens.refresh_token)
-                    self.tokens = refreshed_tokens
-                    
-                    await self.redis_client.set_object(
-                        key=f"{self.user_id}:tokens", 
-                        object=refreshed_tokens.model_dump(), 
-                        xx=True
-                    )
-                    
-                    return await func(self, *args, **kwargs)
-                except AuthorizationError as e:
-                    raise e
+                self.auth_service.refresh_tokens(user_id=self.user_id)
+                await func(self, *args, **kwargs)
         return wrapper
 
     
     async def __aenter__(self):
-        if tokens_from_cache := self.__get_user_tokens(self.user_id):
-            if not tokens_from_cache:
-                raise AuthorizationError
-            self.tokens = TokenResponse.model_validate_json(tokens_from_cache)
+        self.auth_service.get_user_tokens(user_id=self.user_id)
         return self
 
     async def __aexit__(self, exc_type, exc_val, exc_tb):
-        await self.cleanup_resources()
+        pass
 
-    @__refresh_on_401
-    async def __get_user_tokens(self) -> TokenResponse:
-        if tokens := await self.redis_client.get_object(key=f"{self.user_id}:tokens"):
-            return TokenResponse.model_validate_json(tokens)
-        
+
     @__refresh_on_401
     async def get_note(self) -> NoteFromBackend:
         if note := await self.redis_client.get_object(f"{self.user_id}:{note_id}"):
