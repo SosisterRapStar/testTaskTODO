@@ -7,12 +7,13 @@ from aiogram import Bot
 from src.config import settings
 from aiogram.fsm.storage.redis import RedisStorage
 from src.redis_client import RedisClient, RedisManager
+from src.services.auth_service import AbstractAuthService, AuthService
 
 
 @dataclass
 class NaiveSimpleDIContainer:
     api_client: AbstractAPIClient
-    # auth_service: AbstractAuthService
+    auth_service: AbstractAuthService
     notes_service: AbstractNotesService
     bot: Bot
     storage: RedisStorage
@@ -20,6 +21,7 @@ class NaiveSimpleDIContainer:
 
 container = NaiveSimpleDIContainer(
     notes_service=NotesService(api_client=APIClient, redis_client=RedisClient()),
+    auth_service=AuthService,
     api_client=APIClient(),
     bot=Bot(token=settings.api_key),
     storage=RedisStorage.from_url("redis://localhost:6379"),

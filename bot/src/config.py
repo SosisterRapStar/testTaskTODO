@@ -12,7 +12,7 @@ class BSettings(BaseSettings):
 
 class Settings(BSettings):
     api_key: str = Field(alias="BOT_KEY")
-    backend_url: str = ""
+    backend_url: str = "http://localhost/"
     redis_url: str = "redis://localhost:6379"
     redis_max_pool_size: int = 5
     redis_host: str = "localhost"

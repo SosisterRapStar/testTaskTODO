@@ -7,6 +7,7 @@ from aiogram.types import ReplyKeyboardMarkup, KeyboardButton
 
 from src.simple_container import container
 import json
+from .get_notes_handler import note_answer
 
 router = Router()
 
@@ -84,8 +85,7 @@ async def start_creating_note(message: Message, state: FSMContext):
     )
 
 
-@router.message(F.text.lower() == "обновить заметку")
-async def start_creating_note(message: Message, state: FSMContext):
+async def start_updating_note(message: Message, state: FSMContext):
     await state.set_state(NoteUpdator.choice)
     await message.answer(
         "Выберите что изменить в заметке", reply_markup=get_keyboard_for_update()
@@ -243,6 +243,11 @@ async def save_note(message: Message, state: FSMContext):
     await container.notes_service.change_note(
         new_data=note, user_id=message.from_user.id
     )
+    note = await container.notes_service.get_note(note_id=data["id"])
+    await message.answer("Заметка обновлена", reply_markup=types.ReplyKeyboardRemove())
+    await note_answer(note=note, message=message)
+    await state.clear()
+    
 
 
 @router.message(NoteUpdator.choice)

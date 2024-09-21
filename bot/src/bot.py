@@ -64,7 +64,6 @@ dp.include_router(note_updator)
 @dp.message(Command("start"))
 async def start_command(message: types.Message):
     await message.answer("Choose a button:", reply_markup=get_main_key_board())
-    await container.stora
 
 
 async def main():
