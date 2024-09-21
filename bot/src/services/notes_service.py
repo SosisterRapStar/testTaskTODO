@@ -17,13 +17,20 @@ from functools import wraps
 class AbstractNotesService(ABC, AbstractAsyncContextManager):
     api_client: AbstractAPIClient
     redis_client: RedisClient
+
     @abstractmethod
     async def __aenter__(self) -> Coroutine[Any, Any, _T_co]:
         return await super().__aenter__()
+
     @abstractmethod
-    async def __aexit__(self, exc_type: type[BaseException] | None, exc_value: BaseException | None, traceback: TracebackType | None) -> bool | None:
+    async def __aexit__(
+        self,
+        exc_type: type[BaseException] | None,
+        exc_value: BaseException | None,
+        traceback: TracebackType | None,
+    ) -> bool | None:
         return await super().__aexit__(exc_type, exc_value, traceback)
-    
+
     @abstractmethod
     async def get_my_notes(self, user_id: str) -> List[NoteFromBackend]:
         raise NotImplementedError
@@ -71,15 +78,21 @@ class NotesService(AbstractNotesService, AbstractAsyncContextManager):
                 await self.func(*args, **kwargs)
             except AuthorizationError:
                 try:
-                    refreshed_tokens = await self.api_client.refresh_token(refresh_token=self.tokens.refresh_token)
+                    refreshed_tokens = await self.api_client.refresh_token(
+                        refresh_token=self.tokens.refresh_token
+                    )
                     self.tokens = refreshed_tokens
-                    self.redis_client.set_object(key=f"{self.user_id}:tokens", object=refreshed_tokens.model_dump(), xx=True) # xx=True параметр не обновляет ttl
+                    self.redis_client.set_object(
+                        key=f"{self.user_id}:tokens",
+                        object=refreshed_tokens.model_dump(),
+                        xx=True,
+                    )  # xx=True параметр не обновляет ttl
                     await self.func(*args, **kwargs)
                 except AuthorizationError as e:
                     raise e
             return wrapper
-    
-    async def __aenter__(self, user_id: str):
+
+    async def __aenter__(self):
         if tokens_from_cache := self.__get_user_tokens(self.user_id):
             if not tokens_from_cache:
                 raise AuthorizationError
@@ -90,26 +103,28 @@ class NotesService(AbstractNotesService, AbstractAsyncContextManager):
         await self.cleanup_resources()
 
     @__refresh_on_401
-    async def __get_user_tokens(self, user_id: str) -> TokenResponse:
-        if tokens := await self.redis_client.get_object(key=f"{user_id}:tokens"):
+    async def __get_user_tokens(self) -> TokenResponse:
+        if tokens := await self.redis_client.get_object(key=f"{self.user_id}:tokens"):
             return TokenResponse.model_validate_json(tokens)
-        
+
     @__refresh_on_401
-    async def get_note(self, user_id: str, note_id: str) -> NoteFromBackend:
-        if note := await self.redis_client.get_object(f"{user_id}:{note_id}"):
+    async def get_note(self) -> NoteFromBackend:
+        if note := await self.redis_client.get_object(f"{self.user_id}:{note_id}"):
             return NoteFromBackend.model_validate_json(note)
         else:
-            return await self.api_client.get_note(note_id=note_id, token=self.tokens.access_token)
-        
+            return await self.api_client.get_note(
+                note_id=note_id, token=self.tokens.access_token
+            )
+
     @__refresh_on_401
-    async def get_my_notes(self, user_id: str) -> List[NoteFromBackend]:
+    async def get_my_notes(self) -> List[NoteFromBackend]:
         if notes := await self.redis_client.get_list(
-            key=f"{user_id}:notes"
+            key=f"{self.user_id}:notes"
         ):  # ключ notes хранит только id заметок, а не сами заметки
             return_notes = []
             for note_id in notes:
                 note = await self.redis_client.get_object(
-                    key=f"{user_id}:{note_id}"
+                    key=f"{self.user_id}:{note_id}"
                 )  # взятие кэшированного значения из конеретного ключа
                 return_notes.append(NoteFromBackend.model_validate_json(note))
             return notes
@@ -118,13 +133,12 @@ class NotesService(AbstractNotesService, AbstractAsyncContextManager):
         notes_id = []
         for note in notes:
             notes_id.append(note.id)
-            await self.redis_client.set_object(key=f"{user_id}:{note.id}")
-        await self.redis_client.set_list(key=f"{user_id}:notes", values=notes_id)
+            await self.redis_client.set_object(key=f"{self.user_id}:{note.id}")
+        await self.redis_client.set_list(key=f"{self.user_id}:notes", values=notes_id)
         return notes
-    
-    @__refresh_on_401
-    async def create_note(self, note_data: dict, user_id: str) -> None:
 
+    @__refresh_on_401
+    async def create_note(self, note_data: dict) -> None:
         note = NoteToCreate(
             title=note_data["title"],
             tags=[Tag(name=tag) for tag in note_data["tags"]],
@@ -132,51 +146,52 @@ class NotesService(AbstractNotesService, AbstractAsyncContextManager):
         )
 
         note_id = await self.api_client.create_note(note=note, token=self.tokens.acce)
-        await self.redis_client.set_object(key=f"{user_id}:{note_id}", data=note_data)
-        await self.redis_client.add_to_list(key=f"{user_id}:notes", value=note.id)
-
+        await self.redis_client.set_object(
+            key=f"{self.user_id}:{note_id}", data=note_data
+        )
+        await self.redis_client.add_to_list(key=f"{self.user_id}:notes", value=note.id)
 
     @__refresh_on_401
-    async def change_note(self, new_data: dict, user_id: str) -> NoteFromBackend:
+    async def change_note(self, new_data: dict) -> NoteFromBackend:
         note = NoteForUpdate(**new_data)
         updated_note = await self.api_client.update_note(
             updated_note=note, token=self.tokens.access_token
         )
         await self.redis_client.set_object(
-            key=f"{user_id}:{updated_note.id}", data=updated_note.model_dump()
+            key=f"{self.user_id}:{updated_note.id}", data=updated_note.model_dump()
         )
         return updated_note
-    
+
     @__refresh_on_401
-    async def delete_note(self, note_id: str, user_id: str) -> None:
+    async def delete_note(self, note_id: str) -> None:
         deleted_note_id = await self.api_client.delete_note(
             note_id=note_id, token=self.tokens.access_token
         )
-        if await self.redis_client.get_object(key=f"{user_id}:{deleted_note_id}"):
-            await self.redis_client.delete_key(key=f"{user_id}:{deleted_note_id}")
-        if notes := await self.redis_client.get_list(key=f"{user_id}:notes"):
+        if await self.redis_client.get_object(key=f"{self.user_id}:{deleted_note_id}"):
+            await self.redis_client.delete_key(key=f"{self.user_id}:{deleted_note_id}")
+        if notes := await self.redis_client.get_list(key=f"{self.user_id}:notes"):
             if deleted_note_id in notes:
                 notes.remove[deleted_note_id]
-            await self.redis_client.set_list(key=f"{user_id}:notes", values=notes)
+            await self.redis_client.set_list(key=f"{self.user_id}:notes", values=notes)
 
     @__refresh_on_401
-    async def __from_list_to_notes(
-        self, notes_id: list[str], user_id: str
-    ) -> List[NoteFromBackend]:
+    async def __from_list_to_notes(self, notes_id: list[str]) -> List[NoteFromBackend]:
         notes = []
         for note_id in notes_id:
-            if note := await self.redis_client.get_object(key=f"{user_id}:{note_id}"):
+            if note := await self.redis_client.get_object(
+                key=f"{self.user_id}:{note_id}"
+            ):
                 notes.append(NoteFromBackend.model_validate_json(note))
             raise CacheIsNotConsistent
-        
+
     @__refresh_on_401
-    async def find_nodes_by_tags(
-        self, user_id: str, tags: List[str]
-    ) -> List[NoteFromBackend]:
+    async def find_nodes_by_tags(self, tags: List[str]) -> List[NoteFromBackend]:
         try:
             finded_notes = []
-            if notes_id := self.redis_client.get_list(key=f"{user_id}:notes"):
-                notes = self.__from_list_to_notes(user_id=user_id, notes_id=notes_id)
+            if notes_id := self.redis_client.get_list(key=f"{self.user_id}:notes"):
+                notes = self.__from_list_to_notes(
+                    user_id=self.user_id, notes_id=notes_id
+                )
             for note in notes:
                 if tags in note.tags:
                     finded_notes.append(note)
@@ -190,7 +205,9 @@ class NotesService(AbstractNotesService, AbstractAsyncContextManager):
             for note in notes:
                 notes_id.append(note.id)
                 await self.redis_client.set_object(
-                    key=f"{user_id}:{note.id}", data=note.model_dump_json()
+                    key=f"{self.user_id}:{note.id}", data=note.model_dump_json()
                 )
-            await self.redis_client.set_list(key=f"{user_id}:notes", values=notes_id)
+            await self.redis_client.set_list(
+                key=f"{self.user_id}:notes", values=notes_id
+            )
             return notes
