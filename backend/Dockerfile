@@ -16,6 +16,8 @@ RUN poetry install --no-root --no-interaction --no-ansi
 
 COPY . .
 
+EXPOSE 8000
+
 
 RUN chmod +x alembic-uvi-script.sh
 
