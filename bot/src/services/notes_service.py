@@ -87,7 +87,7 @@ class NotesService(AbstractNotesService, AbstractAsyncContextManager):
 
 
     @__refresh_on_401
-    async def get_note(self) -> NoteFromBackend:
+    async def get_note(self, note_id: str) -> NoteFromBackend:
         if note := await self.redis_client.get_object(f"{self.user_id}:{note_id}"):
             return NoteFromBackend.model_validate_json(note)
         else:
