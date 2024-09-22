@@ -1,6 +1,6 @@
 from pydantic_settings import SettingsConfigDict, BaseSettings
 from pydantic import Field
-
+import logging
 
 class BSettings(BaseSettings):
     model_config = SettingsConfigDict(
@@ -21,3 +21,12 @@ class Settings(BSettings):
 
 
 settings = Settings()
+
+logging.basicConfig(
+    level=logging.DEBUG,
+    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
+    datefmt="%Y-%m-%d %H:%M:%S",
+    handlers=[logging.StreamHandler()],
+)
+
+logger = logging.getLogger("bot_logger")

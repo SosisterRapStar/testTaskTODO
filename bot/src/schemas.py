@@ -14,11 +14,11 @@ class NoteToCreate(BaseModel):
 
 
 class NoteFromBackend(NoteToCreate):
-    id: uuid.UUID
+    id: str
 
 
 class NoteForUpdate(NoteToCreate):
-    id: uuid.UUID
+    id: str
     title: str | None = None
     tags: List[Tag] | None = None
     content: str | None = None
@@ -27,9 +27,9 @@ class NoteForUpdate(NoteToCreate):
 class TokenResponse(BaseModel):
     access_token: str
     refresh_token: str
-    expire_in: int
-
+    expires_in: int
+    token_type: str = "Bearer"
 
 class UserData(BaseModel):
-    name: str = Field(min_length=3, max_length=50)
-    password: str = Field(min_length=8, max_length=100)
+    name: str #= Field(min_length=3, max_length=50)
+    password: str #= Field(min_length=8, max_length=100)

@@ -7,7 +7,7 @@ from aiogram.types import ReplyKeyboardMarkup, KeyboardButton
 from src.simple_container import container
 from .utils import note_answer
 from src.backend_client import AuthorizationError
-from src.keyboards.common_keyboards import get_auth_key_board
+from src.keyboards.common_keyboards import get_auth_key_board, get_main_key_board
 
 router = Router()
 
@@ -84,12 +84,16 @@ async def cancel_tags(message: Message, state: FSMContext):
 async def save_note(message: Message, state: FSMContext):
     user_data = await state.get_data()
     tags = user_data.get("tags", [])
+    if not tags:
+        await state.set_data(tags = [])
 
     await message.answer(
-        f"Заметка сохранена!\n", reply_markup=types.ReplyKeyboardRemove()
+        f"Заметка сохранена!\n", reply_markup=get_main_key_board()
     )
     note_data = user_data.copy()
-    note = await container.notes_service.create_note(note_data)
+    print(note_data)
+
+    note = await container.notes_service.create_note(note_data=note_data, user_id=message.from_user.id)
     await note_answer(note=note, message=message)
     await state.clear()
 

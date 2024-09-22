@@ -4,9 +4,10 @@ from aiogram.fsm.context import FSMContext
 from aiogram.filters import Command
 from aiogram.fsm.state import StatesGroup, State
 from aiogram.types import ReplyKeyboardMarkup, KeyboardButton
-
+from src.keyboards.common_keyboards import get_main_key_board
 from src.simple_container import container
 from .utils import note_answer
+from src.config import logger
 
 router = Router()
 
@@ -124,7 +125,7 @@ async def choice_state(message: Message, state: FSMContext):
         await state.set_state(NoteUpdator.delete_tags)
         await message.answer(
             "Выберите какой тэг удалить",
-            reply_markup=construct_keyboard(items=note["tags"]),
+            reply_markup=construct_keyboard(items=[note['name'] for note in note["tags"]]),
         )
     else:
         await state.set_state(NoteUpdator.choice)
@@ -183,7 +184,7 @@ async def cancel_title(message: Message, state: FSMContext):
 async def add_tag(message: Message, state: FSMContext):
     data = await state.get_data()
     note = data["updating_note"]
-    note["tags"].append(message.text)
+    note["tags"].append({"name": message.text} )
     await state.update_data(updating_note=note)
     await state.set_state(NoteUpdator.choice)
     await message.answer(
@@ -203,11 +204,11 @@ async def cancel_delete_tags(message: Message, state: FSMContext):
 async def delete_tag_action(message: Message, state: FSMContext):
     data = await state.get_data()
     note = data["updating_note"]
-    if message.text not in note["tags"]:
+    if message.text not in [note['name'] for note in note["tags"]]:
         await state.set_state(NoteUpdator.choice)
         await message.answer("Такого тэга нет", reply_markup=get_keyboard_for_update())
     else:
-        note["tags"].remove(message.text)
+        note["tags"].remove({"name": message.text})
         await state.update_data(updating_note=note)
         await state.set_state(NoteUpdator.choice)
         await message.answer(
@@ -239,11 +240,11 @@ async def cancel_process(message: Message, state: FSMContext):
 async def save_note(message: Message, state: FSMContext):
     data = await state.get_data()
     note = data["updating_note"]
-    await container.notes_service.change_note(
+    logger.debug(f"Updated note {note}")
+    note = await container.notes_service.change_note(
         new_data=note, user_id=message.from_user.id
     )
-    note = await container.notes_service.get_note(note_id=data["id"])
-    await message.answer("Заметка обновлена", reply_markup=types.ReplyKeyboardRemove())
+    await message.answer("Заметка обновлена", reply_markup=get_main_key_board())
     await note_answer(note=note, message=message)
     await state.clear()
 

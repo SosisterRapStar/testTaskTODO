@@ -5,7 +5,6 @@ from aiogram.filters import Command
 from aiogram.fsm.state import StatesGroup, State
 from aiogram.types import ReplyKeyboardMarkup, KeyboardButton
 from src.simple_container import container
-from get_notes_handler import note_answer
 from src.backend_client import AuthorizationError
 from src.keyboards.common_keyboards import get_auth_key_board
 

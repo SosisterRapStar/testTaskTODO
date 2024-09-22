@@ -3,9 +3,9 @@ from abc import ABC, abstractmethod
 from src.backend_client import AbstractAPIClient
 from src.schemas import UserData, TokenResponse
 from src.redis_client import RedisClient
-from src.backend_client import AuthorizationError
+from src.backend_client import AuthorizationError, InvalidData
 import json
-
+from src.config import logger
 
 @dataclass
 class AbstractAuthService(ABC):
@@ -39,7 +39,9 @@ class AuthService(AbstractAuthService):
         Returns:
             TokenResponse: pydantic token model
         """
+        
         if tokens := await self.redis_client.get_object(key=f"{user_id}:tokens"):
+            logger.debug("Getting tokens from redis")
             return TokenResponse.model_validate_json(tokens)
         else:
             raise AuthorizationError
@@ -48,7 +50,7 @@ class AuthService(AbstractAuthService):
         user_data = UserData(name=name, password=password)
         tokens: TokenResponse = await self.api_client.authorization(user_data=user_data)
         await self.redis_client.set_object(
-            key=f"{user_id}:tokens", data=tokens.model_dump()
+            key=f"{user_id}:tokens", data=tokens.model_dump(), ex=tokens.expires_in
         )
 
     async def refresh_tokens(self, user_id: str) -> TokenResponse:
@@ -61,6 +63,7 @@ class AuthService(AbstractAuthService):
         Returns:
             TokenResponse: pydantic token model
         """
+        logger.debug("Refreshing tokens")
         tokens = await self.get_user_tokens(user_id=user_id)
         refreshed_tokens = await self.api_client.refresh_token(
             refresh_token=tokens.refresh_token
@@ -68,7 +71,7 @@ class AuthService(AbstractAuthService):
         tokens = refreshed_tokens
 
         await self.redis_client.set_object(
-            key=f"{self.user_id}:tokens", object=refreshed_tokens.model_dump(), xx=True
+            key=f"{user_id}:tokens", data=refreshed_tokens.model_dump(), xx=True
         )
         # xx параметр не обновляет ttl, обновляет ключ только если таковой существует
         # не должно вернуть none, если вернет то сначал получим auth error из api_client
