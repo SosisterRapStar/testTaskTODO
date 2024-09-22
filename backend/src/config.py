@@ -32,7 +32,7 @@ class SecuritySettings(BSettings):
         default=60, alias="ACCESS_TOKEN_EXPIRE_MINUTES"
     )
     refresh_token_expire_minutes: int = Field(
-        default=60, alias="REFRESH_TOKEN_EXPIRE_MINUTES"
+        default=120, alias="REFRESH_TOKEN_EXPIRE_MINUTES"
     )
 
 
@@ -48,13 +48,13 @@ settings = Settings()
 logger = logging.getLogger("app_logger")
 logger.setLevel(logging.DEBUG)
 # midnight параметр отвечает за обновление соответсвенно в полночь
-handler = TimedRotatingFileHandler(
-    "app.log", when="midnight", interval=1, backupCount=7
-)
-handler.suffix = "%Y-%m-%d"
-formatter = logging.Formatter("%(asctime)s - %(levelname)s - %(message)s")
-handler.setFormatter(formatter)
-logger.addHandler(handler)
+# handler = TimedRotatingFileHandler(
+#     "/app/logs/app.log", when="midnight", interval=1, backupCount=7
+# )
+# handler.suffix = "%Y-%m-%d"
+# formatter = logging.Formatter("%(asctime)s - %(levelname)s - %(message)s")
+# handler.setFormatter(formatter)
+# logger.addHandler(handler)
 
-# отключение INFO и DEBUG логов sqlalchemy
-logging.getLogger("sqlalchemy.engine").setLevel(logging.WARNING)
+# # отключение INFO и DEBUG логов sqlalchemy
+# logging.getLogger("sqlalchemy.engine").setLevel(logging.WARNING)

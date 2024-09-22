@@ -34,7 +34,7 @@ class AbstractAlchemyRepo(ABC):
 @dataclass
 class AbstractNotesRepo(AbstractAlchemyRepo):
     @abstractmethod
-    async def create(self, title: str, tags: List[str]) -> Note:
+    async def create(self, title: str, tags: List[str], content: str) -> Note:
         raise NotImplementedError
 
     @abstractmethod
@@ -56,11 +56,10 @@ class AbstractNotesRepo(AbstractAlchemyRepo):
 
 @dataclass
 class NotesRepo(AbstractNotesRepo):
-    async def create(self, title: str, tags: List[str], user_id: str) -> Note:
+    async def create(self, title: str, tags: List[str], user_id: str, content: str) -> Note:
         user_id = uuid.UUID(user_id)
-        new_note = Note(title=title)
+        new_note = Note(title=title, content=content)
         self.session.add(new_note)
-        await new_note.awaitable_attrs.tags
         for tag_name in tags:
             tag = await self.session.scalar(select(Tag).where(Tag.name == tag_name))
             if not tag:
@@ -75,9 +74,8 @@ class NotesRepo(AbstractNotesRepo):
         stmt = select(Note).where(Note.id == id)
         return await self.session.scalar(statement=stmt)
 
-    async def delete(self, id: str) -> Result:
-        id = uuid.UUID(id)
-        stmt = delete(Note).where(Note.id == id).returning(Note.title)
+    async def delete(self, id: uuid.UUID) -> Result:
+        stmt = delete(Note).where(Note.id == id).returning(Note.id)
         res = await self.session.execute(stmt)
         return res.scalar_one()
 

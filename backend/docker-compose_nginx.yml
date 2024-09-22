@@ -29,7 +29,7 @@ services:
     volumes:
       - ./src:/app/src
       - ./alembic:/app/alembic
-      - ./docker_log.log:/app/app.log
+      - ./docker_log:/app/logs/
     networks:
       - my_network
 

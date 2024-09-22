@@ -13,12 +13,11 @@ from typing import Optional
 router = APIRouter(tags=["Notes"])
 
 
-@router.post("/", status_code=status.HTTP_201_CREATED)
+@router.post("/", status_code=status.HTTP_201_CREATED, response_model=NoteSchemaOnResponse)
 async def create_note(
     current_user: get_auth_user, new_note: NoteSchema, note_service: notes_service
 ):
-    id = await note_service.create_new_note(note=new_note, user=current_user)
-    return {"note_id": str(id)}
+    return await note_service.create_new_note(note=new_note, user=current_user)
 
 
 @router.patch("/{note_id}", status_code=status.HTTP_200_OK)
@@ -27,17 +26,17 @@ async def update_note(
     note: NoteForUpdate,
     note_id: uuid.UUID,
     note_service: notes_service,
+    response_model=NoteSchemaOnResponse
 ):
-    await note_service.update_note(id=note_id, user=current_user, note_schema=note)
-    return {"message": "Note updated"}
+    
+    return await note_service.update_note(id=note_id, user=current_user, note_schema=note)
 
 
 @router.delete("/{note_id}", status_code=status.HTTP_200_OK)
 async def delete_note(
-    note_id: str, note_service: notes_service, current_user: get_auth_user
+    note_id: uuid.UUID, note_service: notes_service, current_user: get_auth_user
 ):
-    await note_service.delete_note(user=current_user, id=note_id)
-    return {"message": "Note deleted"}
+    return await note_service.delete_note(user=current_user, id=note_id)
 
 
 @router.get("/", response_model=List[NoteSchemaOnResponse])

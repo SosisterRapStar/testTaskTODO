@@ -10,8 +10,9 @@ class BaseUserModel(BaseModel):
 
 
 class Tag(BaseModel):
-    model_config = ConfigDict(from_attributes=True)
+    model_config = ConfigDict(from_attributes=True, frozen = True)
     name: str
+        
 
 
 class UserOnAuth(BaseUserModel):
@@ -27,6 +28,7 @@ class NoteSchema(BaseModel):
     model_config = ConfigDict(from_attributes=True)
     title: str
     tags: List[Tag]
+    content: str
 
 
 class NoteSchemaOnResponse(NoteSchema):

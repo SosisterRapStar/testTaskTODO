@@ -89,7 +89,7 @@ class Authorzation:
         return TokenResponse(
             access_token=access_token,
             refresh_token=refresh_token,
-            expires_in=self.token_settings["access_token"]["expire_time"].seconds,
+            expires_in=self.token_settings["refresh_token"]["expire_time"].seconds,
         )
 
     async def __create_token(self, user_data: dict[str, Any], type: str) -> str:

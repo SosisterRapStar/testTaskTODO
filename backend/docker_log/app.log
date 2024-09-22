@@ -1,0 +1,8 @@
+2024-09-21 23:52:55,925 - DEBUG - User has been authorized my32na32me
+2024-09-21 23:52:55,926 - DEBUG - Note: 0c17d8e7-6eb1-4f54-a836-4acde7aaf763
+2024-09-21 23:52:55,926 - DEBUG - Note: 92aa4ac7-6708-48c7-9559-b0f5f22ef4b2
+2024-09-21 23:52:55,926 - DEBUG - Note: ed6e88c8-ea17-42be-802e-859e7dd2e33d
+2024-09-21 23:52:55,926 - DEBUG - Note: 23b2da10-6ff9-40db-8571-2ce15b42fd1a
+2024-09-21 23:52:55,926 - DEBUG - Note: 682c1337-8632-4606-804d-6033dd8b2c9d
+2024-09-21 23:52:55,926 - DEBUG - Note: 810e5271-ccbf-43a1-9ab1-21a5ea9eb175
+2024-09-21 23:52:55,926 - ERROR - User've tried to access notes of another user it can be an attack
