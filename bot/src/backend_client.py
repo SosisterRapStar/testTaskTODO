@@ -181,7 +181,7 @@ class APIClient(AbstractAPIClient):
             )
             # if response.status == 401:
             #     raise AuthorizationError()
-            return NoteFromBackend.model_validate_json(await response.text())
+            return await response.text()
 
     async def get_note_using_tags(
         self, tags: List[Tag], token: str
